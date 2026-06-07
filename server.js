@@ -15,24 +15,24 @@ const BASE_URL = (process.env.REPLIT_URL || `http://localhost:${PORT}`).replace(
 const REDIRECT = BASE_URL + '/auth/callback';
 const IS_PROD  = !!process.env.REPLIT_URL;
 
-// Trust Replit's reverse proxy — required for accurate req.ip in rate limiting
+// Trust Replit's reverse proxy â€” required for accurate req.ip in rate limiting
 app.set('trust proxy', 1);
 
-// Security headers — CSP disabled because we load Google Fonts externally
+// Security headers â€” CSP disabled because we load Google Fonts externally
 // and renderMd injects trusted HTML. Re-enable with proper directives if needed.
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false
 }));
 
-// ── Middleware ────────────────────────────────────────────────────────────────
+// â”€â”€ Middleware â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Split body limits: images need up to 15mb, everything else is tiny
 app.use('/api/drive/image', express.json({ limit: '15mb' }));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'dist')));
 
 app.use(session({
-  // FileStore persists sessions to disk — API keys survive Replit restarts
+  // FileStore persists sessions to disk â€” API keys survive Replit restarts
   store: new FileStore({
     path: './sessions',
     ttl: 30 * 24 * 60 * 60,
@@ -56,10 +56,10 @@ const aiLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many requests — please slow down' }
+  message: { error: 'Too many requests â€” please slow down' }
 });
 
-// ── API key encryption (AES-256-GCM) ─────────────────────────────────────────
+// â”€â”€ API key encryption (AES-256-GCM) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Keys are encrypted in the session file. If SESSION_SECRET changes, users
 // re-enter keys. The derived key is cached to avoid repeated scrypt calls.
 const _keyCache = {};
@@ -105,7 +105,7 @@ function decryptKey(ciphertext) {
   }
 }
 
-// ── OAuth helpers ─────────────────────────────────────────────────────────────
+// â”€â”€ OAuth helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function oauthClient() {
   return new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
@@ -142,7 +142,7 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// SSE headers — X-Accel-Buffering stops Replit's nginx from buffering the stream
+// SSE headers â€” X-Accel-Buffering stops Replit's nginx from buffering the stream
 function sseHeaders(res) {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -153,7 +153,7 @@ function sseHeaders(res) {
   res.flushHeaders();
 }
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
+// â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get('/auth/login', (req, res) => {
   if (!process.env.GOOGLE_CLIENT_ID) {
     return res.send('<h2>Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Replit Secrets first. See SETUP.md.</h2>');
@@ -202,7 +202,7 @@ app.get('/auth/me', (req, res) => {
   });
 });
 
-// ── AI Keys ───────────────────────────────────────────────────────────────────
+// â”€â”€ AI Keys â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.post('/api/keys', requireAuth, (req, res) => {
   const { anthropicKey, openaiKey } = req.body;
   const MAX_KEY_LEN = 300;
@@ -218,7 +218,7 @@ app.post('/api/keys', requireAuth, (req, res) => {
   });
 });
 
-// ── SSE stream pipe ───────────────────────────────────────────────────────────
+// â”€â”€ SSE stream pipe â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // finished flag prevents double-fire when message_stop AND body.end both fire
 function pipeSSEStream(body, parser, onToken, onDone, onError) {
   let buf = '', finished = false;
@@ -253,7 +253,7 @@ const gptParser = raw => {
   catch { return null; }
 };
 
-// ── Input validation ──────────────────────────────────────────────────────────
+// â”€â”€ Input validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function validateMessages(messages) {
   if (!Array.isArray(messages) || !messages.length) return 'messages must be a non-empty array';
   if (messages.length > 100) return 'messages array exceeds 100 items';
@@ -302,7 +302,7 @@ function toGptMessages(messages) {
   });
 }
 
-// ── Claude ────────────────────────────────────────────────────────────────────
+// â”€â”€ Claude â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.post('/api/chat/claude', requireAuth, aiLimiter, async (req, res) => {
   const { messages, system } = req.body;
   const msgErr = validateMessages(messages);
@@ -311,7 +311,7 @@ app.post('/api/chat/claude', requireAuth, aiLimiter, async (req, res) => {
   if (sysErr) return res.status(400).json({ error: sysErr });
 
   const apiKey = decryptKey(req.session.anthropicKey) || process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return res.status(400).json({ error: 'No Anthropic API key — add it in Settings.' });
+  if (!apiKey) return res.status(400).json({ error: 'No Anthropic API key â€” add it in Settings.' });
 
   sseHeaders(res);
 
@@ -327,7 +327,7 @@ app.post('/api/chat/claude', requireAuth, aiLimiter, async (req, res) => {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 8096,
         system: system || undefined,
         messages,
@@ -354,7 +354,7 @@ app.post('/api/chat/claude', requireAuth, aiLimiter, async (req, res) => {
   }
 });
 
-// ── GPT ───────────────────────────────────────────────────────────────────────
+// â”€â”€ GPT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.post('/api/chat/gpt', requireAuth, aiLimiter, async (req, res) => {
   const { messages, system } = req.body;
   const msgErr = validateMessages(messages);
@@ -363,7 +363,7 @@ app.post('/api/chat/gpt', requireAuth, aiLimiter, async (req, res) => {
   if (sysErr) return res.status(400).json({ error: sysErr });
 
   const apiKey = decryptKey(req.session.openaiKey) || process.env.OPENAI_API_KEY;
-  if (!apiKey) return res.status(400).json({ error: 'No OpenAI API key — add it in Settings.' });
+  if (!apiKey) return res.status(400).json({ error: 'No OpenAI API key â€” add it in Settings.' });
 
   sseHeaders(res);
 
@@ -398,7 +398,7 @@ app.post('/api/chat/gpt', requireAuth, aiLimiter, async (req, res) => {
   }
 });
 
-// ── Both ──────────────────────────────────────────────────────────────────────
+// â”€â”€ Both â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.post('/api/chat/both', requireAuth, aiLimiter, async (req, res) => {
   const { messages, system } = req.body;
   const msgErr = validateMessages(messages);
@@ -424,7 +424,7 @@ app.post('/api/chat/both', requireAuth, aiLimiter, async (req, res) => {
     fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 8096, system: system || undefined, messages, stream: true }),
+      body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 8096, system: system || undefined, messages, stream: true }),
       signal: controller.signal
     }).then(r => {
       if (!r.ok) {
@@ -478,7 +478,7 @@ app.post('/api/chat/both', requireAuth, aiLimiter, async (req, res) => {
   checkAllDone();
 });
 
-// ── Drive ─────────────────────────────────────────────────────────────────────
+// â”€â”€ Drive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function getOrCreateFolder(name, parentId, drive) {
   try {
     const s = await drive.files.list({
@@ -576,7 +576,7 @@ app.get('/api/drive/folder/:id', requireAuth, async (req, res) => {
     const f = await drive.files.get({ fileId: req.params.id, fields: 'id,name' });
     res.json(f.data);
   } catch {
-    res.status(404).json({ error: 'Folder not found — check the ID' });
+    res.status(404).json({ error: 'Folder not found â€” check the ID' });
   }
 });
 
@@ -590,9 +590,9 @@ app.post('/api/vault/folder', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
-// ── Memory extraction ────────────────────────────────────────────────────────
+// â”€â”€ Memory extraction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // After a conversation, Claude reads the transcript and extracts facts worth
-// remembering — things about the user, their work, decisions, preferences.
+// remembering â€” things about the user, their work, decisions, preferences.
 // The extracted memory is appended to the user's system prompt automatically.
 app.post('/api/memory/extract', requireAuth, aiLimiter, async (req, res) => {
   const { transcript, currentMemory } = req.body;
@@ -626,7 +626,7 @@ If there are no new facts worth remembering, return: {"facts": []}`;
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 512,
         messages: [{ role: 'user', content: prompt }]
       })
@@ -656,15 +656,15 @@ app.post('/api/memory/save', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
-// Global error handler — prevents stack traces leaking to clients
+// Global error handler â€” prevents stack traces leaking to clients
 app.use((err, req, res, _next) => {
   console.error('Unhandled error:', err.message || err);
   if (res.headersSent) return;
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ── Serve ─────────────────────────────────────────────────────────────────────
-// SPA fallback — only for non-API routes so unknown API paths get 404, not HTML
+// â”€â”€ Serve â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// SPA fallback â€” only for non-API routes so unknown API paths get 404, not HTML
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api/') || req.path.startsWith('/auth/')) {
     return res.status(404).json({ error: 'Not found' });
@@ -672,4 +672,4 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-app.listen(PORT, '0.0.0.0', () => console.log(`The Hub running → ${BASE_URL}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`The Hub running â†’ ${BASE_URL}`));
