@@ -1,0 +1,169 @@
+import { useEffect, useState } from "react";
+import { fmtDate } from "../lib/format";
+
+interface DumbFileMeta {
+  id: string;
+  title: string;
+  context: string | null;
+  created_at: string;
+}
+
+interface DumbFileFull extends DumbFileMeta {
+  html: string;
+}
+
+async function apiFetch(path: string, init?: RequestInit) {
+  const stored = localStorage.getItem("hub_auth");
+  const session = stored ? JSON.parse(stored) : null;
+  const res = await fetch(path, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+    },
+  });
+  if (!res.ok) throw new Error(`Request failed ${res.status}`);
+  return res.json();
+}
+
+export default function DumbFiles() {
+  const [files, setFiles]     = useState<DumbFileMeta[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [viewing, setViewing] = useState<DumbFileFull | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError]     = useState<string | null>(null);
+
+  useEffect(() => { load(); }, []);
+
+  async function load() {
+    try {
+      const data = await apiFetch("/api/dumbfile");
+      setFiles(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Load failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function openFile(id: string) {
+    try {
+      const data = await apiFetch(`/api/dumbfile?id=${id}`);
+      setViewing(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Load failed");
+    }
+  }
+
+  async function generate() {
+    if (generating) return;
+    setGenerating(true);
+    setError(null);
+    try {
+      const data = await apiFetch("/api/dumbfile", {
+        method: "POST",
+        body: JSON.stringify({ context: "hub-current-state" }),
+      });
+      setFiles((prev) => [{ id: data.id, title: data.title, context: "hub-current-state", created_at: new Date().toISOString() }, ...prev]);
+      setViewing(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Generate failed");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  // Viewer modal
+  if (viewing) {
+    return (
+      <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col">
+        <div className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 shrink-0">
+          <h2 className="text-white font-semibold text-sm truncate">{viewing.title}</h2>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                const win = window.open("", "_blank");
+                win?.document.write(viewing.html);
+                win?.document.close();
+              }}
+              className="text-xs text-slate-400 hover:text-white px-3 py-1.5 border border-slate-700 hover:border-slate-500"
+            >
+              Open Full
+            </button>
+            <button
+              onClick={() => setViewing(null)}
+              className="text-slate-400 hover:text-white text-lg leading-none px-2"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+        <iframe
+          className="flex-1 w-full border-0"
+          srcDoc={viewing.html}
+          sandbox="allow-scripts"
+          title={viewing.title}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-3xl">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Dumb Files</h1>
+          <p className="text-slate-500 text-sm mt-1">Visual HTML explainers of what was built</p>
+        </div>
+        <button
+          onClick={generate}
+          disabled={generating}
+          className="px-5 py-2.5 bg-purple-600 text-white font-semibold text-sm hover:bg-purple-500 disabled:opacity-50 transition-colors"
+        >
+          {generating ? "Generating..." : "Generate Now"}
+        </button>
+      </div>
+
+      {generating && (
+        <div className="mb-4 px-4 py-3 bg-purple-500/10 border border-purple-500/30 text-purple-300 text-sm">
+          GPT-4o is building your dumb file... this takes ~15 seconds.
+        </div>
+      )}
+
+      {error && (
+        <p className="text-red-400 text-sm mb-4 px-4 py-2 bg-red-400/10 border border-red-400/20">{error}</p>
+      )}
+
+      {loading ? (
+        <p className="text-slate-400 text-sm">Loading...</p>
+      ) : files.length === 0 ? (
+        <div className="text-center py-16 border border-dashed border-slate-700">
+          <p className="text-slate-500 text-lg mb-2">No dumb files yet</p>
+          <p className="text-slate-600 text-sm">Hit Generate Now to create your first visual explainer.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {files.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => openFile(f.id)}
+              className="w-full text-left bg-slate-900 border border-slate-800 hover:border-purple-500/40 p-4 transition-colors group"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-white font-semibold group-hover:text-purple-300 transition-colors">
+                    {f.title}
+                  </p>
+                  {f.context && (
+                    <p className="text-slate-500 text-xs mt-0.5 font-mono">{f.context}</p>
+                  )}
+                </div>
+                <span className="text-slate-600 text-xs shrink-0">{fmtDate(f.created_at)}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

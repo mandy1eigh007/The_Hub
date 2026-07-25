@@ -95,15 +95,37 @@ export default function Room() {
     }
   }
 
+  const PROMPT_CHIPS = [
+    "What are we building?",
+    "What's unfinished?",
+    "Run a checkpoint",
+    "Explain the last decision",
+    "What should I do first?",
+    "What broke?",
+  ];
+
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] md:h-[calc(100vh-2rem)]">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <h1 className="text-2xl font-bold text-white">Room</h1>
         {newCount > 0 && (
           <span className="text-xs text-sky-400 bg-sky-400/10 px-2 py-1">
             {newCount} new
           </span>
         )}
+      </div>
+
+      {/* Prompt chips — always visible above the feed */}
+      <div className="flex flex-wrap gap-1.5 mb-3 pb-3 border-b border-slate-800">
+        {PROMPT_CHIPS.map((chip) => (
+          <button
+            key={chip}
+            onClick={() => setInput(chip)}
+            className="text-xs px-2.5 py-1 bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700 hover:text-white transition-colors"
+          >
+            {chip}
+          </button>
+        ))}
       </div>
 
       {error && (

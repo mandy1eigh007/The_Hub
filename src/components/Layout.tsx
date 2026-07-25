@@ -29,6 +29,13 @@ const NAV_GROUPS = [
       { to: "/github", label: "GitHub" },
     ],
   },
+  {
+    label: "Work",
+    items: [
+      { to: "/tasks",      label: "Tasks" },
+      { to: "/dumbfiles",  label: "Dumb Files" },
+    ],
+  },
 ];
 
 export default function Layout() {
