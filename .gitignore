@@ -1,4 +1,7 @@
 node_modules/
 dist/
-sessions/
 *.log
+.env
+.env.*
+.dev.vars
+.wrangler/

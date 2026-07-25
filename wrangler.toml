@@ -1,0 +1,6 @@
+# Cloudflare Pages config. No secrets in this file — SUPABASE_URL and
+# HUB_SERVICE_KEY are set in the Cloudflare dashboard (or `wrangler pages
+# secret put`). Functions are auto-discovered from /functions.
+name = "the-hub"
+compatibility_date = "2025-01-01"
+pages_build_output_dir = "dist"

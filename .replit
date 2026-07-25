@@ -1,8 +1,0 @@
-run = "npm install && npm run build && node server.js"
-
-[nix]
-channel = "stable-22_11"
-
-[deployment]
-run = ["sh", "-c", "node server.js"]
-deploymentTarget = "cloudrun"
