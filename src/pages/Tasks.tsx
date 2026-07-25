@@ -321,7 +321,7 @@ function TaskCard({ task, projectColor, onMove, onDelete }: {
           className="text-xs text-slate-600 hover:text-red-400 px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity"
           title="Delete"
         >
-          ✕
+          del
         </button>
       </div>
     </div>

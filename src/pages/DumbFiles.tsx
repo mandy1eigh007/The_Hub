@@ -82,9 +82,10 @@ export default function DumbFiles() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
-                const win = window.open("", "_blank");
-                win?.document.write(viewing.html);
-                win?.document.close();
+                const blob = new Blob([viewing.html], { type: "text/html" });
+                const url = URL.createObjectURL(blob);
+                window.open(url, "_blank");
+                setTimeout(() => URL.revokeObjectURL(url), 10000);
               }}
               className="text-xs text-slate-400 hover:text-white px-3 py-1.5 border border-slate-700 hover:border-slate-500"
             >
