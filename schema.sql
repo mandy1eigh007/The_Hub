@@ -1,6 +1,6 @@
 -- ============================================================================
 -- The Hub — complete schema
--- Target: Supabase LegoBlox project (tzvutctcvnqzqjaxfktz), wiped clean.
+-- Target: The Hub database (tzvutctcvnqzqjaxfktz) — dedicated Supabase instance.
 -- Run once in the Supabase SQL editor (or via supabase MCP apply_migration).
 --
 -- Access model:

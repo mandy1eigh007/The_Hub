@@ -55,6 +55,14 @@ export default function Room() {
             setNewCount((n) => n + fresh.length);
             setTimeout(scrollToBottom, 100);
           }
+        } else {
+          // cursor still null (room was empty on load) — re-poll tail to catch first message
+          const msgs = await getRoomMessages({ tail: true });
+          if (msgs.length > 0) {
+            setMessages(msgs);
+            sinceRef.current = msgs[msgs.length - 1].created_at;
+            setTimeout(scrollToBottom, 100);
+          }
         }
       } catch (e) {
         setError(e instanceof Error ? e.message : "Poll failed");
