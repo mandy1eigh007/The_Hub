@@ -11,10 +11,10 @@ export async function onRequestGet({ request, env }) {
   const p = new URLSearchParams();
   p.set("select", "id,ts,speaker,kind,re,content,artifact,created_at");
   if (since) {
-    p.set("ts", `gte.${since}`);
-    p.set("order", "ts.asc");
+    p.set("created_at", `gt.${since}`);
+    p.set("order", "created_at.asc");
   } else {
-    p.set("order", "ts.asc.nullslast");
+    p.set("order", "created_at.asc");
     p.set("limit", String(limit));
   }
 

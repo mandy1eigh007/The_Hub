@@ -27,7 +27,7 @@ export default function Wire() {
           setMessages(msgs);
           if (msgs.length > 0) {
             const last = msgs[msgs.length - 1];
-            sinceRef.current = last.ts || last.created_at;
+            sinceRef.current = last.created_at;
           }
           initialLoad.current = false;
           setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
@@ -36,7 +36,7 @@ export default function Wire() {
           if (fresh.length > 0) {
             setMessages((prev) => [...prev, ...fresh]);
             const last = fresh[fresh.length - 1];
-            sinceRef.current = last.ts || last.created_at;
+            sinceRef.current = last.created_at;
             setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
           }
         }

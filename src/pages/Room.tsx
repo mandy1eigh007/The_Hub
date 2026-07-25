@@ -42,7 +42,7 @@ export default function Room() {
           setMessages(msgs);
           if (msgs.length > 0) {
             const last = msgs[msgs.length - 1];
-            sinceRef.current = last.ts || last.created_at;
+            sinceRef.current = last.created_at;
           }
           initialLoad.current = false;
           setTimeout(scrollToBottom, 100);
@@ -52,7 +52,7 @@ export default function Room() {
           if (fresh.length > 0) {
             setMessages((prev) => [...prev, ...fresh]);
             const last = fresh[fresh.length - 1];
-            sinceRef.current = last.ts || last.created_at;
+            sinceRef.current = last.created_at;
             setNewCount((n) => n + fresh.length);
             setTimeout(scrollToBottom, 100);
           }

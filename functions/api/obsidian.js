@@ -22,9 +22,6 @@ export async function onRequestGet({ request, env }) {
   p.set("limit", String(limit));
 
   if (q) {
-    p.set("fts", `fts(english).${encodeURIComponent(q)}`);
-    // PostgREST FTS: use the fts column directly
-    // Correct PostgREST syntax: ?fts=phfts(english).term
     const pFts = new URLSearchParams();
     pFts.set("select", "id,path,title,tags,updated_at");
     pFts.set("fts", `phfts(english).${q}`);

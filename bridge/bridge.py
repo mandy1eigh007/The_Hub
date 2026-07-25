@@ -363,16 +363,17 @@ def sync_tail(wm: dict):
         wm[f"tail:{path_key}"] = start + len(new_lines)
         log.info("tail: pushed %d lines from %s", pushed, best_path.name)
 
-    # Prune old tail rows for this path (keep latest 500)
-    requests.delete(
-        f"{SUPABASE_URL}/rest/v1/live_tail",
-        headers=headers(),
-        params={
-            "session_path": f"neq.{path_key}",
-            "select": "id",
-        },
-        timeout=10,
-    )
+    # Prune old rows for this session only; keep last 500 lines
+    if start > 500:
+        requests.delete(
+            f"{SUPABASE_URL}/rest/v1/live_tail",
+            headers=headers(),
+            params={
+                "session_path": f"eq.{path_key}",
+                "line_index":   f"lt.{max(0, start - 500)}",
+            },
+            timeout=10,
+        )
 
 
 # ── Obsidian sync ─────────────────────────────────────────────────────────────

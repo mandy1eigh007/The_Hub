@@ -14,10 +14,10 @@ export async function onRequestGet({ request, env }) {
   const p = new URLSearchParams();
   p.set("select", "id,speaker,content,ts,turn_id,origin,created_at");
   if (since) {
-    p.set("ts", `gte.${since}`);
-    p.set("order", "ts.asc");
+    p.set("created_at", `gt.${since}`);
+    p.set("order", "created_at.asc");
   } else if (tail) {
-    p.set("order", "ts.asc.nullslast");
+    p.set("order", "created_at.asc");
     p.set("limit", "50");
   } else {
     p.set("order", "ts.desc.nullslast");
@@ -37,7 +37,9 @@ export async function onRequestPost({ request, env }) {
     return json({ error: "Invalid JSON" }, 400);
   }
 
-  const { speaker = "mandy", content, turn_id } = body;
+  // Speaker is always mandy — this is her single-user interface. Never trust from body.
+  const { content, turn_id } = body;
+  const speaker = "mandy";
   if (!content || !content.trim()) {
     return json({ error: "content required" }, 400);
   }
