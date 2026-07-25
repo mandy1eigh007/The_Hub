@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { fmtDate } from "../lib/format";
+import { apiFetch } from "../lib/api";
 
-// Types inline to keep this self-contained
 interface HubTask {
   id: string;
   title: string;
@@ -36,20 +36,6 @@ function timeAgo(ts: string): string {
   return fmtDate(ts);
 }
 
-async function apiFetch(path: string, init?: RequestInit) {
-  const stored = localStorage.getItem("hub_auth");
-  const session = stored ? JSON.parse(stored) : null;
-  const res = await fetch(path, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
-    },
-  });
-  if (!res.ok) throw new Error(`Request failed ${res.status}`);
-  return res.json();
-}
-
 export default function Tasks() {
   const [tasks, setTasks]       = useState<HubTask[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -65,7 +51,7 @@ export default function Tasks() {
 
   async function load() {
     try {
-      const data = await apiFetch("/api/tasks");
+      const data = await apiFetch<HubTask[]>("/api/tasks");
       setTasks(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Load failed");
@@ -100,7 +86,7 @@ export default function Tasks() {
     if (!newTitle.trim() || saving) return;
     setSaving(true);
     try {
-      const task = await apiFetch("/api/tasks", {
+      const task = await apiFetch<HubTask>("/api/tasks", {
         method: "POST",
         body: JSON.stringify({ title: newTitle.trim(), project: newProject || null, priority: newPriority }),
       });
@@ -198,7 +184,6 @@ export default function Tasks() {
         return (
           <div key={status} className="mb-6">
             <div className="flex items-center gap-3 mb-3">
-              <div className={`w-2.5 h-2.5 rounded-full ${cfg.dot}`} />
               <span className={`text-xs font-bold tracking-widest ${cfg.text}`}>{cfg.label}</span>
               <span className="text-slate-600 text-xs">{items.length}</span>
             </div>
@@ -232,8 +217,7 @@ export default function Tasks() {
             onClick={() => setShowDone(!showDone)}
             className="flex items-center gap-2 text-slate-500 text-sm hover:text-white mb-3"
           >
-            <span>{showDone ? "▾" : "▸"}</span>
-            <span>Done ({done.length})</span>
+            <span>Done ({done.length}) {showDone ? "[-]" : "[+]"}</span>
           </button>
           {showDone && (
             <div className="space-y-2 opacity-60">

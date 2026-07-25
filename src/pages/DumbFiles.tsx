@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fmtDate } from "../lib/format";
+import { apiFetch } from "../lib/api";
 
 interface DumbFileMeta {
   id: string;
@@ -10,20 +11,6 @@ interface DumbFileMeta {
 
 interface DumbFileFull extends DumbFileMeta {
   html: string;
-}
-
-async function apiFetch(path: string, init?: RequestInit) {
-  const stored = localStorage.getItem("hub_auth");
-  const session = stored ? JSON.parse(stored) : null;
-  const res = await fetch(path, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
-    },
-  });
-  if (!res.ok) throw new Error(`Request failed ${res.status}`);
-  return res.json();
 }
 
 export default function DumbFiles() {
@@ -37,7 +24,7 @@ export default function DumbFiles() {
 
   async function load() {
     try {
-      const data = await apiFetch("/api/dumbfile");
+      const data = await apiFetch<DumbFileMeta[]>("/api/dumbfile");
       setFiles(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Load failed");
@@ -48,7 +35,7 @@ export default function DumbFiles() {
 
   async function openFile(id: string) {
     try {
-      const data = await apiFetch(`/api/dumbfile?id=${id}`);
+      const data = await apiFetch<DumbFileFull>(`/api/dumbfile?id=${id}`);
       setViewing(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Load failed");
@@ -60,7 +47,7 @@ export default function DumbFiles() {
     setGenerating(true);
     setError(null);
     try {
-      const data = await apiFetch("/api/dumbfile", {
+      const data = await apiFetch<DumbFileFull>("/api/dumbfile", {
         method: "POST",
         body: JSON.stringify({ context: "hub-current-state" }),
       });
@@ -79,25 +66,12 @@ export default function DumbFiles() {
       <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col">
         <div className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 shrink-0">
           <h2 className="text-white font-semibold text-sm truncate">{viewing.title}</h2>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => {
-                const blob = new Blob([viewing.html], { type: "text/html" });
-                const url = URL.createObjectURL(blob);
-                window.open(url, "_blank");
-                setTimeout(() => URL.revokeObjectURL(url), 10000);
-              }}
-              className="text-xs text-slate-400 hover:text-white px-3 py-1.5 border border-slate-700 hover:border-slate-500"
-            >
-              Open Full
-            </button>
-            <button
-              onClick={() => setViewing(null)}
-              className="text-slate-400 hover:text-white text-lg leading-none px-2"
-            >
-              ✕
-            </button>
-          </div>
+          <button
+            onClick={() => setViewing(null)}
+            className="text-xs text-slate-400 hover:text-white px-3 py-1.5 border border-slate-700 hover:border-slate-500"
+          >
+            close
+          </button>
         </div>
         <iframe
           className="flex-1 w-full border-0"

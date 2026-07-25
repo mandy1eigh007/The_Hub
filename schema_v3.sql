@@ -22,8 +22,8 @@ create table if not exists hub_tasks (
 alter table hub_tasks enable row level security;
 
 create policy hub_tasks_all on hub_tasks for all
-  using (auth.role() = 'service_role' or auth.uid() is not null)
-  with check (auth.role() = 'service_role' or auth.uid() is not null);
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);
 
 create index if not exists hub_tasks_status_idx  on hub_tasks (status);
 create index if not exists hub_tasks_project_idx on hub_tasks (project);
@@ -41,7 +41,7 @@ create table if not exists dumb_files (
 alter table dumb_files enable row level security;
 
 create policy hub_dumb_files_all on dumb_files for all
-  using (auth.role() = 'service_role' or auth.uid() is not null)
-  with check (auth.role() = 'service_role' or auth.uid() is not null);
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);
 
 create index if not exists dumb_files_created_idx on dumb_files (created_at desc);

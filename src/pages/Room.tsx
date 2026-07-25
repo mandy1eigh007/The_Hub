@@ -46,8 +46,7 @@ export default function Room() {
           }
           initialLoad.current = false;
           setTimeout(scrollToBottom, 100);
-        } else {
-          if (!sinceRef.current) return;
+        } else if (sinceRef.current) {
           const fresh = await getRoomMessages({ since: sinceRef.current });
           if (fresh.length > 0) {
             setMessages((prev) => [...prev, ...fresh]);

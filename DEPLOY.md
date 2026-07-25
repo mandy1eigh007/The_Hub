@@ -1,7 +1,7 @@
 # The Hub — build + deploy runbook (v3 command center)
 
 Stack: React 18 + TS + Vite + Tailwind on Cloudflare Pages, Pages Functions API,
-Supabase (LegoBlox project `tzvutctcvnqzqjaxfktz`) for data + auth,
+Supabase (The Hub database `tzvutctcvnqzqjaxfktz` — dedicated instance, formerly named LegoBlox) for data + auth,
 Python capture + bridge scripts on Claude Code hooks and local scheduler.
 
 Secrets never appear in this repo. Keys live in Windows user env vars (capture/bridge)
@@ -11,9 +11,10 @@ and Cloudflare Pages secrets (API). The browser holds no Supabase key of any kin
 
 ## 1. Apply schema (first install only)
 
-Supabase dashboard -> LegoBlox -> SQL Editor:
-1. Run `schema.sql` — creates core tables.
+Supabase dashboard -> The Hub database -> SQL Editor:
+1. Run `schema.sql` — creates core tables with RLS policies.
 2. Run `schema_v2.sql` — adds Room, Wire, ChatGPT, Obsidian, live_tail tables.
+3. Run `schema_v3.sql` — adds hub_tasks and dumb_files tables.
 
 ---
 
@@ -57,7 +58,7 @@ Core (required for all API routes):
 npx wrangler pages secret put SUPABASE_URL --project-name the-hub
     (value: https://tzvutctcvnqzqjaxfktz.supabase.co)
 npx wrangler pages secret put HUB_SERVICE_KEY --project-name the-hub
-    (value: legoblox service_role key from vault.json)
+    (value: hub_db service_role key from vault.json)
 ```
 
 Connectors (required for ChatGPT, Notion, GitHub pages):

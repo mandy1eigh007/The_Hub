@@ -131,33 +131,33 @@ alter table imp_files         enable row level security;
 alter table ingest_watermarks enable row level security;
 
 create policy hub_projects_all on projects for all
-  using (auth.role() = 'service_role' or auth.uid() is not null)
-  with check (auth.role() = 'service_role' or auth.uid() is not null);
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);
 
 create policy hub_sessions_all on sessions for all
-  using (auth.role() = 'service_role' or auth.uid() is not null)
-  with check (auth.role() = 'service_role' or auth.uid() is not null);
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);
 
 create policy hub_chunks_all on chunks for all
-  using (auth.role() = 'service_role' or auth.uid() is not null)
-  with check (auth.role() = 'service_role' or auth.uid() is not null);
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);
 
 create policy hub_decisions_all on decisions for all
-  using (auth.role() = 'service_role' or auth.uid() is not null)
-  with check (auth.role() = 'service_role' or auth.uid() is not null);
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);
 
 create policy hub_open_loops_all on open_loops for all
-  using (auth.role() = 'service_role' or auth.uid() is not null)
-  with check (auth.role() = 'service_role' or auth.uid() is not null);
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);
 
 create policy hub_room_messages_all on room_messages for all
-  using (auth.role() = 'service_role' or auth.uid() is not null)
-  with check (auth.role() = 'service_role' or auth.uid() is not null);
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);
 
 create policy hub_imp_files_all on imp_files for all
-  using (auth.role() = 'service_role' or auth.uid() is not null)
-  with check (auth.role() = 'service_role' or auth.uid() is not null);
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);
 
 create policy hub_ingest_watermarks_all on ingest_watermarks for all
-  using (auth.role() = 'service_role' or auth.uid() is not null)
-  with check (auth.role() = 'service_role' or auth.uid() is not null);
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);

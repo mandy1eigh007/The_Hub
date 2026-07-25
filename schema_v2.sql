@@ -32,8 +32,8 @@ create table if not exists wire_messages (
 alter table wire_messages enable row level security;
 
 create policy hub_wire_messages_all on wire_messages for all
-  using (auth.role() = 'service_role' or auth.uid() is not null)
-  with check (auth.role() = 'service_role' or auth.uid() is not null);
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);
 
 -- ── chatgpt_threads ──────────────────────────────────────────────────────────
 create table if not exists chatgpt_threads (
@@ -46,8 +46,8 @@ create table if not exists chatgpt_threads (
 alter table chatgpt_threads enable row level security;
 
 create policy hub_chatgpt_threads_all on chatgpt_threads for all
-  using (auth.role() = 'service_role' or auth.uid() is not null)
-  with check (auth.role() = 'service_role' or auth.uid() is not null);
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);
 
 create index if not exists chatgpt_threads_session_idx on chatgpt_threads (session_id);
 create index if not exists chatgpt_threads_created_idx on chatgpt_threads (created_at desc);
@@ -65,8 +65,8 @@ create table if not exists chatgpt_messages (
 alter table chatgpt_messages enable row level security;
 
 create policy hub_chatgpt_messages_all on chatgpt_messages for all
-  using (auth.role() = 'service_role' or auth.uid() is not null)
-  with check (auth.role() = 'service_role' or auth.uid() is not null);
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);
 
 create index if not exists chatgpt_messages_thread_idx on chatgpt_messages (thread_id, ts);
 
@@ -87,8 +87,8 @@ create table if not exists obsidian_notes (
 alter table obsidian_notes enable row level security;
 
 create policy hub_obsidian_notes_all on obsidian_notes for all
-  using (auth.role() = 'service_role' or auth.uid() is not null)
-  with check (auth.role() = 'service_role' or auth.uid() is not null);
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);
 
 create index if not exists obsidian_fts_idx on obsidian_notes using gin (fts);
 create index if not exists obsidian_updated_idx on obsidian_notes (updated_at desc);
@@ -108,8 +108,8 @@ create table if not exists live_tail (
 alter table live_tail enable row level security;
 
 create policy hub_live_tail_all on live_tail for all
-  using (auth.role() = 'service_role' or auth.uid() is not null)
-  with check (auth.role() = 'service_role' or auth.uid() is not null);
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);
 
 create index if not exists live_tail_session_idx on live_tail (session_path, line_index desc);
 create index if not exists live_tail_ts_idx on live_tail (ts desc);

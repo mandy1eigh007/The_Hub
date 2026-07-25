@@ -94,6 +94,11 @@ async function request<T>(path: string, init?: RequestInit, retried = false): Pr
   return data as T;
 }
 
+// Exported for pages that need authenticated fetch with auto-refresh.
+export async function apiFetch<T = unknown>(path: string, init?: RequestInit): Promise<T> {
+  return request<T>(path, init);
+}
+
 export function getChunks(opts: {
   q?: string;
   session?: string;
