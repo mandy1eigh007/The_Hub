@@ -1,25 +1,34 @@
-# The Hub — build + deploy runbook
+# The Hub — build + deploy runbook (v3 command center)
 
 Stack: React 18 + TS + Vite + Tailwind on Cloudflare Pages, Pages Functions API,
 Supabase (LegoBlox project `tzvutctcvnqzqjaxfktz`) for data + auth,
-Python capture script on Claude Code hooks.
+Python capture + bridge scripts on Claude Code hooks and local scheduler.
 
-Secrets never appear in this repo. `HUB_SERVICE_KEY` lives in the Windows user
-environment (capture) and in Cloudflare Pages secrets (API). The browser holds
-no Supabase key of any kind — auth goes through the `/api/auth/*` proxy.
+Secrets never appear in this repo. Keys live in Windows user env vars (capture/bridge)
+and Cloudflare Pages secrets (API). The browser holds no Supabase key of any kind.
 
-## 1. Apply the database schema
+---
 
-Supabase dashboard -> LegoBlox project -> SQL Editor -> paste `schema.sql` -> Run.
-(The project must be empty first; this is a fresh install, not a migration.)
+## 1. Apply schema (first install only)
 
-## 2. Create Mandy's auth user
+Supabase dashboard -> LegoBlox -> SQL Editor:
+1. Run `schema.sql` — creates core tables.
+2. Run `schema_v2.sql` — adds Room, Wire, ChatGPT, Obsidian, live_tail tables.
 
-Supabase dashboard -> Authentication:
-1. Providers -> Email: enabled. Turn OFF "Allow new users to sign up"
-   (single-user instance — this is what makes the permissive RLS policy safe).
-2. Users -> Add user -> email + password (use a generated password from a
-   password manager; never paste it into chat).
+---
+
+## 2. Supabase auth setup (first install only)
+
+Authentication -> Providers -> Email:
+- Enable email sign-in.
+- Turn OFF "Allow new users to sign up".
+
+Authentication -> Users -> Add user -> email + password.
+
+Authentication -> URL Configuration:
+- Site URL: `https://the-hub-d1e.pages.dev` (or custom domain).
+
+---
 
 ## 3. Install and build
 
@@ -29,61 +38,101 @@ npm install
 npm run build
 ```
 
-## 4. First deploy to Cloudflare Pages
+---
+
+## 4. Deploy to Cloudflare Pages
 
 ```
-npx wrangler login
-npx wrangler pages project create the-hub --production-branch main
 npm run deploy
 ```
 
-`npm run deploy` = build + `wrangler pages deploy dist --project-name the-hub`.
-Functions in `/functions` deploy automatically with the site.
+(`npm run deploy` = build + `wrangler pages deploy dist --project-name the-hub`)
+
+---
 
 ## 5. Set Cloudflare secrets
 
+Core (required for all API routes):
 ```
 npx wrangler pages secret put SUPABASE_URL --project-name the-hub
     (value: https://tzvutctcvnqzqjaxfktz.supabase.co)
 npx wrangler pages secret put HUB_SERVICE_KEY --project-name the-hub
-    (value: the service role key — paste into the wrangler prompt, not chat)
+    (value: legoblox service_role key from vault.json)
+```
+
+Connectors (required for ChatGPT, Notion, GitHub pages):
+```
+npx wrangler pages secret put OPENAI_API_KEY --project-name the-hub
+    (value: OPENAI_API_KEY_HUB from vault.json)
+npx wrangler pages secret put NOTION_API_KEY --project-name the-hub
+    (value: NOTION_API_KEY from vault.json)
+npx wrangler pages secret put GITHUB_TOKEN --project-name the-hub
+    (value: GITHUB_TOKEN from vault.json)
 ```
 
 Dashboard alternative: Cloudflare -> Workers & Pages -> the-hub -> Settings ->
-Variables and Secrets -> add both as Secret, then redeploy.
+Variables and Secrets -> add as Secret, then redeploy.
 
-## 6. Supabase Auth URL configuration
+---
 
-Supabase dashboard -> Authentication -> URL Configuration:
-- Site URL: `https://the-hub.pages.dev` (or the custom domain once attached)
-
-The Hub uses password grant through the server-side proxy, so no OAuth redirect
-URLs are needed — Site URL is enough.
-
-## 7. Deploy the capture script
+## 6. Deploy bridge.py (local sync daemon)
 
 ```
-copy /Y capture\capture.py C:\imp\scripts\capture.py
+copy /Y C:\Users\mandy\the_hub\bridge\bridge.py C:\imp\scripts\bridge.py
 ```
 
-Hooks (in `~/.claude/settings.json`) must run `C:/imp/scripts/capture.ps1` on
-SessionStart, Stop, and PreCompact. SessionStart matters: if a terminal is
-killed, Stop never fires, and the next session start is what backfills.
-Requires `HUB_SERVICE_KEY` as a Windows user env var:
+Set required env var (already done if HUB_SERVICE_KEY is set):
+```powershell
+[System.Environment]::SetEnvironmentVariable("HUB_SERVICE_KEY", "<service_role_key>", "User")
+```
 
+Run manually (one pass):
 ```
-[System.Environment]::SetEnvironmentVariable("HUB_SERVICE_KEY", "<value>", "User")
+python C:\imp\scripts\bridge.py --once
 ```
+
+Run continuously:
+```
+python C:\imp\scripts\bridge.py
+```
+
+Optional: Obsidian sync — set vault path before running:
+```powershell
+[System.Environment]::SetEnvironmentVariable("OBSIDIAN_VAULT_PATH", "C:\path\to\vault", "User")
+```
+
+Schedule (runs at logon):
+```powershell
+$action  = New-ScheduledTaskAction -Execute "python" -Argument "C:\imp\scripts\bridge.py"
+$trigger = New-ScheduledTaskTrigger -AtLogOn
+Register-ScheduledTask -TaskName "HubBridge" -Action $action -Trigger $trigger -RunLevel Highest
+```
+
+---
+
+## 7. Hooks (capture.ps1 — already configured from v2)
+
+`C:\Users\mandy\.claude\settings.json` hooks run `capture.ps1` on:
+- SessionStart
+- Stop
+- PreCompact
+
+These handle transcript capture. Bridge.py handles Room, IMP, Tail, Obsidian.
+
+---
 
 ## 8. Verify end to end
 
-1. Open the Pages URL -> log in with the Supabase user.
-2. Run any Claude Code session, wait for a Stop hook (or run
-   `powershell C:\imp\scripts\capture.ps1` by hand).
-3. Dashboard shows the session; Vault search finds words from the conversation.
-4. Spool check: `dir C:\imp\scripts\.capture-spool` should be empty or absent.
-   `.deadletter` files there mean a batch failed 5 times — investigate before
-   deleting.
+1. Open the Pages URL -> log in.
+2. Dashboard: recent sessions should show after capture.py runs.
+3. Room: run `python bridge.py --once --source room` — Room messages should appear.
+4. IMP: run `python bridge.py --once --source imp` — NOW/TODO/STATE tabs populate.
+5. Tail: start a Claude session, run `python bridge.py --once --source tail` — lines appear.
+6. Chat: type a message -> ChatGPT responds (OPENAI_API_KEY must be set in CF).
+7. Notion: search any term -> results from your workspace.
+8. GitHub: Open PRs tab shows your open pull requests.
+
+---
 
 ## Local development
 
@@ -91,6 +140,12 @@ Requires `HUB_SERVICE_KEY` as a Windows user env var:
 npm run pages:dev
 ```
 
-Builds and serves the site plus Functions at http://localhost:8788. Provide the
-two secrets for local runs in a `.dev.vars` file (gitignored automatically by
-wrangler) or via `--binding`.
+Serves site + Functions at http://localhost:8788.
+Create `.dev.vars` with secrets for local runs (gitignored by wrangler):
+```
+SUPABASE_URL=https://tzvutctcvnqzqjaxfktz.supabase.co
+HUB_SERVICE_KEY=<service_role_key>
+OPENAI_API_KEY=<hub_openai_key>
+NOTION_API_KEY=<notion_key>
+GITHUB_TOKEN=<github_pat>
+```

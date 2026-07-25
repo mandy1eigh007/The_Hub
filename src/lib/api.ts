@@ -150,3 +150,215 @@ export function setLoopResolved(id: string, resolved: boolean): Promise<OpenLoop
 export function search(q: string): Promise<SearchResults> {
   return request<SearchResults>(`/api/search?q=${encodeURIComponent(q)}`);
 }
+
+// ── Room ─────────────────────────────────────────────────────────────────────
+
+export interface RoomMessage {
+  id: string;
+  speaker: Speaker | null;
+  content: string;
+  ts: string | null;
+  turn_id: number | null;
+  origin: "room_file" | "hub";
+  created_at: string;
+}
+
+export function getRoomMessages(opts: { since?: string; tail?: boolean; limit?: number } = {}): Promise<RoomMessage[]> {
+  const p = new URLSearchParams();
+  if (opts.since) p.set("since", opts.since);
+  if (opts.tail)  p.set("tail", "1");
+  if (opts.limit) p.set("limit", String(opts.limit));
+  return request<RoomMessage[]>(`/api/room${p.toString() ? `?${p}` : ""}`);
+}
+
+export function postRoomMessage(content: string, speaker: Speaker = "mandy"): Promise<RoomMessage> {
+  return request<RoomMessage>("/api/room", {
+    method: "POST",
+    body: JSON.stringify({ content, speaker }),
+  });
+}
+
+// ── Wire ─────────────────────────────────────────────────────────────────────
+
+export interface WireMessage {
+  id: string;
+  ts: string | null;
+  speaker: string | null;
+  kind: string | null;
+  re: string | null;
+  content: string;
+  artifact: string | null;
+  created_at: string;
+}
+
+export function getWireMessages(opts: { since?: string } = {}): Promise<WireMessage[]> {
+  const p = new URLSearchParams();
+  if (opts.since) p.set("since", opts.since);
+  return request<WireMessage[]>(`/api/wire${p.toString() ? `?${p}` : ""}`);
+}
+
+// ── Live Tail ─────────────────────────────────────────────────────────────────
+
+export interface TailLine {
+  id: string;
+  session_path: string;
+  line_index: number;
+  speaker: string | null;
+  role: string | null;
+  content: string;
+  ts: string | null;
+}
+
+export function getTailLines(opts: { since?: string; limit?: number } = {}): Promise<TailLine[]> {
+  const p = new URLSearchParams();
+  if (opts.since) p.set("since", opts.since);
+  if (opts.limit) p.set("limit", String(opts.limit));
+  return request<TailLine[]>(`/api/tail${p.toString() ? `?${p}` : ""}`);
+}
+
+// ── IMP ───────────────────────────────────────────────────────────────────────
+
+export interface ImpFile {
+  id: string;
+  path: string;
+  content: string | null;
+  sha256: string | null;
+  sensitivity: number;
+  updated_at: string;
+}
+
+export function getImpFiles(): Promise<ImpFile[]> {
+  return request<ImpFile[]>("/api/imp");
+}
+
+export function getImpFile(filename: string): Promise<ImpFile> {
+  return request<ImpFile>(`/api/imp/${encodeURIComponent(filename)}`);
+}
+
+export function putImpFile(filename: string, content: string): Promise<unknown> {
+  return request(`/api/imp/${encodeURIComponent(filename)}`, {
+    method: "PUT",
+    body: JSON.stringify({ content }),
+  });
+}
+
+// ── ChatGPT ───────────────────────────────────────────────────────────────────
+
+export interface ChatThread {
+  id: string;
+  title: string | null;
+  session_id: string | null;
+  created_at: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  model: string | null;
+  ts: string;
+}
+
+export interface ChatReply {
+  thread_id: string;
+  thread_title: string | null;
+  reply: string;
+}
+
+export function getChatThreads(): Promise<ChatThread[]> {
+  return request<ChatThread[]>("/api/chatgpt");
+}
+
+export function getChatThread(threadId: string): Promise<{ thread: ChatThread; messages: ChatMessage[] }> {
+  return request(`/api/chatgpt/${threadId}`);
+}
+
+export function sendChatMessage(opts: {
+  message: string;
+  thread_id?: string;
+  title?: string;
+  session_id?: string;
+}): Promise<ChatReply> {
+  return request<ChatReply>("/api/chatgpt", {
+    method: "POST",
+    body: JSON.stringify(opts),
+  });
+}
+
+// ── Notion ────────────────────────────────────────────────────────────────────
+
+export interface NotionResult {
+  id: string;
+  title: string;
+  url: string;
+  edited?: string;
+  snippet?: string;
+}
+
+export function searchNotion(q: string): Promise<{ query: string; results: NotionResult[] }> {
+  return request(`/api/notion?q=${encodeURIComponent(q)}`);
+}
+
+export function getNotionPage(id: string): Promise<NotionResult & { blocks: unknown[] }> {
+  return request(`/api/notion?id=${encodeURIComponent(id)}`);
+}
+
+// ── GitHub ────────────────────────────────────────────────────────────────────
+
+export interface GitHubPR {
+  id: number;
+  title: string;
+  repo: string;
+  state: string;
+  updated_at: string;
+  url: string;
+  labels: string[];
+}
+
+export interface GitHubCommit {
+  sha: string;
+  message: string;
+  author: string;
+  date: string;
+  url: string;
+}
+
+export interface GitHubRepo {
+  full_name: string;
+  description: string | null;
+  pushed_at: string;
+  open_issues: number;
+  default_branch: string;
+  html_url: string;
+}
+
+export function getGitHubPRs(): Promise<GitHubPR[]> {
+  return request<GitHubPR[]>("/api/github?type=prs");
+}
+
+export function getGitHubRepos(): Promise<GitHubRepo[]> {
+  return request<GitHubRepo[]>("/api/github?type=repos");
+}
+
+export function getGitHubCommits(repo: string): Promise<GitHubCommit[]> {
+  return request<GitHubCommit[]>(`/api/github?type=commits&repo=${encodeURIComponent(repo)}`);
+}
+
+// ── Obsidian ──────────────────────────────────────────────────────────────────
+
+export interface ObsidianNote {
+  id: string;
+  path: string;
+  title: string | null;
+  content?: string;
+  tags: string[] | null;
+  updated_at: string;
+}
+
+export function searchObsidian(q: string): Promise<{ query: string; results: ObsidianNote[] }> {
+  return request(`/api/obsidian?q=${encodeURIComponent(q)}`);
+}
+
+export function getObsidianNote(id: string): Promise<ObsidianNote> {
+  return request<ObsidianNote>(`/api/obsidian?id=${encodeURIComponent(id)}`);
+}
