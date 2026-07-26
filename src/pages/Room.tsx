@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { getRoomMessages, postRoomMessage, RoomMessage } from "../lib/api";
+import { getRoomMessages, postRoomMessage, summarizeMessages, RoomMessage } from "../lib/api";
 import { fmtDate } from "../lib/format";
 
 const POLL_MS = 4000;
@@ -19,17 +19,35 @@ function speakerLabel(s: string | null): string {
 }
 
 export default function Room() {
-  const [messages, setMessages]   = useState<RoomMessage[]>([]);
-  const [input, setInput]         = useState("");
-  const [posting, setPosting]     = useState(false);
-  const [error, setError]         = useState<string | null>(null);
-  const [newCount, setNewCount]   = useState(0);
-  const bottomRef                 = useRef<HTMLDivElement>(null);
-  const sinceRef                  = useRef<string | null>(null);
-  const initialLoad               = useRef(true);
+  const [messages, setMessages]       = useState<RoomMessage[]>([]);
+  const [input, setInput]             = useState("");
+  const [posting, setPosting]         = useState(false);
+  const [error, setError]             = useState<string | null>(null);
+  const [newCount, setNewCount]       = useState(0);
+  const [summary, setSummary]         = useState<string | null>(null);
+  const [summarizing, setSummarizing] = useState(false);
+  const bottomRef    = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scrolledUp   = useRef(false);
+  const sinceRef     = useRef<string | null>(null);
+  const initialLoad  = useRef(true);
+
+  // Detect manual scroll-up so polls don't hijack the position
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const div = el; // alias so TypeScript carries the narrowed type into the closure
+    function onScroll() {
+      scrolledUp.current = div.scrollHeight - div.scrollTop - div.clientHeight > 80;
+    }
+    div.addEventListener("scroll", onScroll, { passive: true });
+    return () => div.removeEventListener("scroll", onScroll);
+  }, []);
 
   function scrollToBottom() {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!scrolledUp.current) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }
 
   useEffect(() => {
@@ -41,8 +59,7 @@ export default function Room() {
           const msgs = await getRoomMessages({ tail: true });
           setMessages(msgs);
           if (msgs.length > 0) {
-            const last = msgs[msgs.length - 1];
-            sinceRef.current = last.created_at;
+            sinceRef.current = msgs[msgs.length - 1].created_at;
           }
           initialLoad.current = false;
           setTimeout(scrollToBottom, 100);
@@ -50,13 +67,11 @@ export default function Room() {
           const fresh = await getRoomMessages({ since: sinceRef.current });
           if (fresh.length > 0) {
             setMessages((prev) => [...prev, ...fresh]);
-            const last = fresh[fresh.length - 1];
-            sinceRef.current = last.created_at;
+            sinceRef.current = fresh[fresh.length - 1].created_at;
             setNewCount((n) => n + fresh.length);
             setTimeout(scrollToBottom, 100);
           }
         } else {
-          // cursor still null (room was empty on load) — re-poll tail to catch first message
           const msgs = await getRoomMessages({ tail: true });
           if (msgs.length > 0) {
             setMessages(msgs);
@@ -84,11 +99,26 @@ export default function Room() {
       setMessages((prev) => [...prev, msg]);
       sinceRef.current = msg.ts || msg.created_at;
       setInput("");
+      // Always scroll after user's own send
+      scrolledUp.current = false;
       setTimeout(scrollToBottom, 100);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Post failed");
     } finally {
       setPosting(false);
+    }
+  }
+
+  async function handleSummarize() {
+    setSummarizing(true);
+    setSummary(null);
+    try {
+      const res = await summarizeMessages("room");
+      setSummary(res.summary);
+    } catch {
+      setSummary("Summary unavailable — try again.");
+    } finally {
+      setSummarizing(false);
     }
   }
 
@@ -115,14 +145,23 @@ export default function Room() {
     <div className="flex flex-col h-[calc(100vh-4rem)] md:h-[calc(100vh-2rem)]">
       <div className="flex items-center justify-between mb-3">
         <h1 className="text-2xl font-bold text-white">Room</h1>
-        {newCount > 0 && (
-          <span className="text-xs text-sky-400 bg-sky-400/10 px-2 py-1">
-            {newCount} new
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {newCount > 0 && (
+            <span className="text-xs text-sky-400 bg-sky-400/10 px-2 py-1">
+              {newCount} new
+            </span>
+          )}
+          <button
+            onClick={handleSummarize}
+            disabled={summarizing || messages.length === 0}
+            className="text-xs px-2 py-1 border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {summarizing ? "..." : "Summarize"}
+          </button>
+        </div>
       </div>
 
-      {/* Prompt chips — always visible above the feed */}
+      {/* Prompt chips */}
       <div className="flex flex-wrap gap-1.5 mb-3 pb-3 border-b border-slate-800">
         {PROMPT_CHIPS.map((chip) => (
           <button
@@ -141,7 +180,17 @@ export default function Room() {
         </p>
       )}
 
-      <div className="flex-1 overflow-y-auto border border-slate-800 bg-slate-900 p-4 space-y-4 min-h-0">
+      {summary && (
+        <div className="mb-3 px-3 py-2 bg-slate-800 border border-slate-700 text-sm text-slate-200">
+          <span className="text-xs font-mono font-bold text-slate-500 block mb-1">TLDR</span>
+          {summary}
+        </div>
+      )}
+
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-y-auto border border-slate-800 bg-slate-900 p-4 space-y-4 min-h-0"
+      >
         {messages.length === 0 && (
           <p className="text-slate-500 text-sm">
             No messages yet. Run bridge.py to import ROOM.jsonl, or post below.

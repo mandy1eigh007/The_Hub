@@ -416,3 +416,9 @@ export function sendSecretMessage(opts: {
 }): Promise<{ thread_id: string; user_message: AgentMessage; reply: AgentMessage }> {
   return request("/api/agents-secret", { method: "POST", body: JSON.stringify(opts) });
 }
+
+// ── Summarize ─────────────────────────────────────────────────────────────────
+
+export function summarizeMessages(source: "room" | "tail"): Promise<{ summary: string }> {
+  return request<{ summary: string }>(`/api/summarize?source=${source}`);
+}
