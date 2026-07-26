@@ -53,6 +53,7 @@ dedicated database with no other app's data in it.
 2. `schema_v2.sql` — wire_messages, chatgpt_threads, chatgpt_messages,
    obsidian_notes, live_tail; extends room_messages with origin/turn_id/source_key
 3. `schema_v3.sql` — hub_tasks, dumb_files
+4. `schema_v4.sql` — agents_threads, agents_messages (deployed 2026-07-26)
 
 ---
 
@@ -81,7 +82,7 @@ dedicated database with no other app's data in it.
 | `/github` | GitHub | PRs, repos, commits via GitHub API |
 | `/tasks` | Tasks | hub_tasks — visual ADHD board, full CRUD |
 | `/dumbfiles` | Dumb Files | dumb_files — GPT-4o HTML explainers |
-| `/agents` | Agents | agents_threads + agents_messages — BUILT (schema_v4 pending deploy to Supabase) |
+| `/agents` | Agents | agents_threads + agents_messages — LIVE |
 
 ---
 
@@ -113,6 +114,7 @@ Watermarks stored at `C:\imp\scripts\.bridge-watermarks.json`.
 ## Recent commits (main, as of 2026-07-26)
 
 ```
+d8655c6  feat(agents): Agents page — four-agent persistent chat with Secret Slot (#5)
 c530786  Add GitHub Actions deploy workflow (#4)
 de3fdce  Agents page mockup + HANDOFF.md fixes (#3)
 85a1dbc  Add project handoff (HANDOFF.md)
@@ -134,20 +136,17 @@ The six Hub application secrets remain in Cloudflare Pages unchanged.
 
 ---
 
-## Pending deploy
+## Agents page (`/agents`) — LIVE
 
-### Agents page (`/agents`) — built, Codex review in progress (PR #5)
+Merged in PR #5 (d8655c6). `schema_v4.sql` applied to Supabase 2026-07-26.
 
-Code is on branch `feature/agents-build`. `schema_v4.sql` has NOT been applied to
-Supabase yet — do not merge or deploy until Codex approves.
-
-**What is built:**
-- `agents_threads` + `agents_messages` tables with RLS, UNIQUE(agent), service_role-only grants
+**What is live:**
+- `agents_threads` + `agents_messages`: RLS enabled, composite FK enforces agent/thread integrity, service_role-only grants
 - `/api/agents` CF Function — GET thread/all-feed, POST send+respond, DELETE clear
 - `/api/agents-secret` CF Function — Secret Slot; allowlisted tools only; secret never stored or sent to LLM
-- `/agents` frontend — four-agent sidebar, conversation thread, All feed, Secret Slot UI
+- `/agents` frontend — four-agent sidebar (Claude Sonnet 4.6, Fable 5, GPT-5 mini, GPT-4.1), All feed, Secret Slot UI
 
-**Secret Slot design (implemented):**
+**Secret Slot design:**
 Secret slot textarea → `/api/agents-secret` CF Function → allowlisted tool at hardcoded destination →
 filtered result only returned → agent receives result only, never the credential.
 Credential is never written to Supabase, never sent to any LLM, cleared from form immediately on submit.
