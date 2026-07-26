@@ -27,7 +27,7 @@ const AGENT_LABEL: Record<AgentName, string> = {
 const AGENT_MODEL: Record<AgentName, string> = {
   claude:  "Sonnet 4.6",
   fable:   "Fable 5",
-  codex:   "o4-mini",
+  codex:   "GPT-5 mini",
   chatgpt: "GPT-4.1",
 };
 
@@ -103,6 +103,10 @@ export default function Agents() {
     const text = input.trim();
     if (!text || sending || active === "all") return;
 
+    // Capture agent at send time — agent buttons are disabled while sending, but
+    // capture here as a belt-and-suspenders guard for input restoration.
+    const activeAtSend = active as AgentName;
+
     setSending(true);
     setError(null);
     setInput("");
@@ -111,35 +115,35 @@ export default function Agents() {
 
     const optimistic: AgentMessage = {
       id: `opt-${Date.now()}`,
-      thread_id: threadIds[active as AgentName] || "",
-      agent: active as AgentName,
+      thread_id: threadIds[activeAtSend] || "",
+      agent: activeAtSend,
       role: "user",
       content: text,
       created_at: new Date().toISOString(),
     };
-    setMsgs((prev) => ({ ...prev, [active]: [...(prev[active] || []), optimistic] }));
+    setMsgs((prev) => ({ ...prev, [activeAtSend]: [...(prev[activeAtSend] || []), optimistic] }));
     setTimeout(scrollToBottom, 50);
 
     try {
       const secretText = secret.trim();
       const result = secretText
         ? await sendSecretMessage({
-            agent: active as AgentName,
+            agent: activeAtSend,
             message: text,
             secret: secretText,
             tool,
-            thread_id: threadIds[active as AgentName],
+            thread_id: threadIds[activeAtSend],
           })
         : await sendAgentMessage({
-            agent: active as AgentName,
+            agent: activeAtSend,
             message: text,
-            thread_id: threadIds[active as AgentName],
+            thread_id: threadIds[activeAtSend],
           });
-      setThreadIds((prev) => ({ ...prev, [active]: result.thread_id }));
+      setThreadIds((prev) => ({ ...prev, [activeAtSend]: result.thread_id }));
       setMsgs((prev) => ({
         ...prev,
-        [active]: [
-          ...(prev[active] || []).filter((m) => m.id !== optimistic.id),
+        [activeAtSend]: [
+          ...(prev[activeAtSend] || []).filter((m) => m.id !== optimistic.id),
           result.user_message,
           result.reply,
         ],
@@ -149,10 +153,11 @@ export default function Agents() {
       setTimeout(scrollToBottom, 100);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Send failed");
-      setInput(text);
+      // Only restore draft to the agent it was written for
+      if (active === activeAtSend) setInput(text);
       setMsgs((prev) => ({
         ...prev,
-        [active]: (prev[active] || []).filter((m) => m.id !== optimistic.id),
+        [activeAtSend]: (prev[activeAtSend] || []).filter((m) => m.id !== optimistic.id),
       }));
     } finally {
       setSending(false);
@@ -188,7 +193,8 @@ export default function Agents() {
         <div className="flex-1 overflow-y-auto py-2 space-y-0.5 px-1">
           <button
             onClick={() => setActive("all")}
-            className={`w-full text-left px-3 py-2 rounded transition-colors ${
+            disabled={sending}
+            className={`w-full text-left px-3 py-2 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
               active === "all"
                 ? "bg-slate-700 text-white"
                 : "text-slate-400 hover:bg-slate-800 hover:text-white"
@@ -204,7 +210,8 @@ export default function Agents() {
             <button
               key={agent}
               onClick={() => setActive(agent)}
-              className={`w-full text-left px-3 py-2.5 rounded transition-colors ${
+              disabled={sending}
+              className={`w-full text-left px-3 py-2.5 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                 active === agent
                   ? `bg-slate-800 border ${AGENT_BORDER[agent]}`
                   : "text-slate-400 hover:bg-slate-800"
@@ -247,7 +254,8 @@ export default function Agents() {
             {active !== "all" && threadIds[active] && (
               <button
                 onClick={handleClear}
-                className="text-xs text-slate-600 hover:text-red-400 px-2 py-1 border border-slate-800 hover:border-red-400/30 transition-colors"
+                disabled={sending}
+                className="text-xs text-slate-600 hover:text-red-400 px-2 py-1 border border-slate-800 hover:border-red-400/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 clear
               </button>
@@ -349,7 +357,9 @@ export default function Agents() {
 
                 {slotOpen && (
                   <div className="px-3 pb-3 space-y-2 border-t border-red-500/20">
+                    <label htmlFor="secret-tool-select" className="sr-only">Secret tool</label>
                     <select
+                      id="secret-tool-select"
                       className="w-full bg-slate-900 border border-red-500/20 text-red-300 font-mono text-xs px-2 py-1.5 focus:outline-none mt-2"
                       value={tool}
                       onChange={(e) => setTool(e.target.value)}
@@ -358,7 +368,9 @@ export default function Agents() {
                         <option key={t.value} value={t.value}>{t.label}</option>
                       ))}
                     </select>
+                    <label htmlFor="secret-credential" className="sr-only">Credential</label>
                     <textarea
+                      id="secret-credential"
                       className="w-full border border-red-500/30 text-red-300 font-mono text-xs px-3 py-2 focus:outline-none focus:border-red-500/50 placeholder-red-900/60 resize-none"
                       style={{ background: "#020817" }}
                       rows={2}

@@ -16,7 +16,7 @@ const TOOL_TIMEOUT_MS = 10_000;
 const AGENTS = {
   claude:  { provider: "anthropic", model: "claude-sonnet-4-6" },
   fable:   { provider: "anthropic", model: "claude-fable-5" },
-  codex:   { provider: "openai",    model: "o4-mini",  reasoning: true },
+  codex:   { provider: "openai",    model: "gpt-5-mini" },
   chatgpt: { provider: "openai",    model: "gpt-4.1" },
 };
 
@@ -125,7 +125,9 @@ async function callOpenAI(env, agent, messages) {
     });
     if (!res.ok) throw new Error("OpenAI error");
     const data = await res.json();
-    return data.choices[0].message.content;
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) return "[This request was declined.]";
+    return content;
   } finally {
     clearTimeout(timer);
   }
@@ -145,11 +147,15 @@ async function getOrCreateThread(env, agent) {
 
 // POST /api/agents-secret { agent, message, secret, tool, thread_id? }
 export async function onRequestPost({ request, env }) {
+  // Fast reject if header present; real guard is the post-read check below
   const contentLength = parseInt(request.headers.get("content-length") || "0", 10);
   if (contentLength > MAX_BODY_BYTES) return json({ error: "Request too large" }, 413);
 
+  let rawBody;
+  try { rawBody = await request.text(); } catch { return json({ error: "Failed to read body" }, 400); }
+  if (rawBody.length > MAX_BODY_BYTES) return json({ error: "Request too large" }, 413);
   let body;
-  try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+  try { body = JSON.parse(rawBody); } catch { return json({ error: "Invalid JSON" }, 400); }
 
   const { agent, message, secret, tool, thread_id } = body;
 
@@ -205,26 +211,20 @@ export async function onRequestPost({ request, env }) {
     return json({ error: "AI provider unavailable — try again." }, 502);
   }
 
-  // Persist both turns only after successful provider response
-  const { data: userMsgArr, ok: userOk } = await sbFetch(env, "agents_messages", {
+  // Single array insert — PostgREST processes both rows atomically (secret never stored)
+  const { data: inserted, ok: insertOk } = await sbFetch(env, "agents_messages", {
     method: "POST",
-    body: JSON.stringify({ thread_id: threadId, agent, role: "user", content: displayMessage }),
+    body: JSON.stringify([
+      { thread_id: threadId, agent, role: "user",      content: displayMessage },
+      { thread_id: threadId, agent, role: "assistant", content: replyText },
+    ]),
     headers: { Prefer: "return=representation" },
   });
-  if (!userOk) return json({ error: "Failed to save message" }, 502);
-  const userMsg = Array.isArray(userMsgArr) ? userMsgArr[0] : userMsgArr;
-
-  const { data: replyMsgArr, ok: replyOk } = await sbFetch(env, "agents_messages", {
-    method: "POST",
-    body: JSON.stringify({ thread_id: threadId, agent, role: "assistant", content: replyText }),
-    headers: { Prefer: "return=representation" },
-  });
-  if (!replyOk) {
-    // Compensating delete — keeps threads free of orphaned user messages
-    await sbFetch(env, `agents_messages?id=eq.${userMsg.id}`, { method: "DELETE" });
-    return json({ error: "Failed to save reply" }, 502);
+  if (!insertOk || !Array.isArray(inserted) || inserted.length !== 2) {
+    return json({ error: "Failed to save conversation" }, 502);
   }
-  const replyMsg = Array.isArray(replyMsgArr) ? replyMsgArr[0] : replyMsgArr;
+  const userMsg  = inserted.find((m) => m.role === "user");
+  const replyMsg = inserted.find((m) => m.role === "assistant");
 
   return json({ thread_id: threadId, user_message: userMsg, reply: replyMsg });
 }

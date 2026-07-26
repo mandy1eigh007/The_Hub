@@ -110,9 +110,10 @@ Watermarks stored at `C:\imp\scripts\.bridge-watermarks.json`.
 
 ---
 
-## Recent commits (main, as of 2026-07-25)
+## Recent commits (main, as of 2026-07-26)
 
 ```
+c530786  Add GitHub Actions deploy workflow (#4)
 de3fdce  Agents page mockup + HANDOFF.md fixes (#3)
 85a1dbc  Add project handoff (HANDOFF.md)
 a83584a  Hub v3 command center — full build (Fable + Codex reviewed)
