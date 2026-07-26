@@ -145,15 +145,36 @@ async function getOrCreateThread(env, agent) {
   throw new Error("Thread unavailable");
 }
 
+// Reads the request body in chunks; returns null (never the partial data) if maxBytes exceeded.
+// Prevents fully buffering oversized payloads — per Cloudflare Workers best practices.
+async function readBoundedBody(request, maxBytes) {
+  const reader = request.body?.getReader();
+  if (!reader) return "";
+  const chunks = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > maxBytes) { reader.cancel(); return null; }
+      chunks.push(value);
+    }
+  } catch { return null; }
+  const combined = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) { combined.set(chunk, offset); offset += chunk.byteLength; }
+  return new TextDecoder().decode(combined);
+}
+
 // POST /api/agents-secret { agent, message, secret, tool, thread_id? }
 export async function onRequestPost({ request, env }) {
-  // Fast reject if header present; real guard is the post-read check below
+  // Fast reject if Content-Length header is present; bounded stream enforces the real limit
   const contentLength = parseInt(request.headers.get("content-length") || "0", 10);
   if (contentLength > MAX_BODY_BYTES) return json({ error: "Request too large" }, 413);
 
-  let rawBody;
-  try { rawBody = await request.text(); } catch { return json({ error: "Failed to read body" }, 400); }
-  if (rawBody.length > MAX_BODY_BYTES) return json({ error: "Request too large" }, 413);
+  const rawBody = await readBoundedBody(request, MAX_BODY_BYTES);
+  if (rawBody === null) return json({ error: "Request too large" }, 413);
   let body;
   try { body = JSON.parse(rawBody); } catch { return json({ error: "Invalid JSON" }, 400); }
 
