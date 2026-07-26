@@ -81,11 +81,11 @@
       <div class="px-5 py-3 border-b border-slate-800 flex items-center justify-between shrink-0" style="background:#0f172a">
         <div>
           <h1 class="heading text-2xl font-bold text-sky-400 tracking-wide">Claude</h1>
-          <p class="mono text-xs text-slate-500">Anthropic · Sonnet 4.6</p>
+          <p class="mono text-xs text-slate-500">Anthropic / Sonnet 4.6</p>
         </div>
         <div class="text-right">
-          <p class="text-xs text-slate-600">Fable, Codex, and ChatGPT observe this thread</p>
-          <p class="text-xs text-slate-700 mt-0.5">they do not respond unless you address them directly</p>
+          <p class="text-xs text-slate-600">Fable, Codex, and ChatGPT do not receive secret turns or tool results</p>
+          <p class="text-xs text-slate-700 mt-0.5">non-secret turns visible in All Feed only — agents do not respond unless addressed</p>
         </div>
       </div>
 
@@ -106,7 +106,7 @@
           <span class="mono text-xs font-bold text-red-400/70 w-14 shrink-0 pt-0.5">secret</span>
           <div class="flex-1">
             <p class="text-sm text-red-900 italic mono">[ephemeral — not stored, not shown]</p>
-            <p class="text-xs text-slate-700 mt-1">passed to Hub server only · never sent to any agent · cleared on send</p>
+            <p class="text-xs text-slate-700 mt-1">passed to Hub server only / never sent to any agent / removed from this form after send</p>
           </div>
         </div>
 
@@ -157,7 +157,7 @@
         <!-- Ephemeral slot — collapsed -->
         <div class="border border-red-500/20 rounded" style="background:#160a0a">
           <button class="w-full px-3 py-2 flex items-center justify-between text-xs text-red-400/60 hover:text-red-400/90">
-            <span class="mono font-bold tracking-wide">SECRET SLOT — not saved, cleared after send</span>
+            <span class="mono font-bold tracking-wide">SECRET SLOT — not saved, removed from this form after send</span>
             <span class="text-slate-700">[expand]</span>
           </button>
         </div>
@@ -165,7 +165,7 @@
         <!-- Ephemeral slot — EXPANDED (shown for mockup) -->
         <div class="border border-red-500/30 rounded" style="background:#160a0a">
           <div class="px-3 py-2 border-b border-red-500/20 flex items-center justify-between">
-            <span class="mono text-xs font-bold text-red-400/80 tracking-wide">SECRET SLOT — not saved, cleared after send</span>
+            <span class="mono text-xs font-bold text-red-400/80 tracking-wide">SECRET SLOT — not saved, removed from this form after send</span>
             <span class="text-xs text-slate-600 cursor-pointer hover:text-slate-400">[collapse]</span>
           </div>
           <div class="p-3 space-y-2">

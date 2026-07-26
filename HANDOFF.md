@@ -127,12 +127,18 @@ a83584a  Hub v3 command center — full build (Fable + Codex reviewed)
 ### Agents page (`/agents`) — Codex security review complete, approved 2026-07-25
 
 Multi-agent collaboration page: Claude, Fable, Codex, ChatGPT as direct conversation contacts.
-All agents observe the shared thread; only the addressed agent responds.
+Only the addressed agent responds. Non-secret turns are visible to Mandy in All Feed.
+Secret-backed turns, filtered tool results, and agent responses from secret turns are
+never injected into non-addressed agents' model context — only Mandy sees them in All Feed.
 
 **Server-side credential tool (approved design):**
 Secret slot textarea → dedicated CF Function → direct API call using the credential →
 strictly filtered result returned → agent receives result only, never the credential.
 Credential is never written to Supabase, never sent to any LLM.
+
+The credential CF Function permits only server-allowlisted tools and destinations.
+No arbitrary URLs, generic proxying, external MCPs, or model-selected destinations
+may carry the credential. Allowlist is enforced server-side before any outbound call.
 
 Requires: `schema_v4.sql` (agents_threads, agents_messages), `/api/agents` CF Function,
 `/agents` frontend page. Mockup: `mockups/agents-page.html`.
