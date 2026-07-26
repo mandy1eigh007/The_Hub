@@ -58,7 +58,7 @@ dedicated database with no other app's data in it.
 
 ## CF secrets (all set, production)
 
-`SUPABASE_URL`, `HUB_SERVICE_KEY`, `OPENAI_API_KEY`, `NOTION_API_KEY`, `GITHUB_TOKEN`
+`SUPABASE_URL`, `HUB_SERVICE_KEY`, `OPENAI_API_KEY`, `NOTION_API_KEY`, `GITHUB_TOKEN`, `ANTHROPIC_API_KEY`
 
 ---
 
@@ -81,15 +81,15 @@ dedicated database with no other app's data in it.
 | `/github` | GitHub | PRs, repos, commits via GitHub API |
 | `/tasks` | Tasks | hub_tasks — visual ADHD board, full CRUD |
 | `/dumbfiles` | Dumb Files | dumb_files — GPT-4o HTML explainers |
-| `/agents` | Agents | agents_threads + agents_messages — IN DESIGN (schema_v4, not yet built) |
+| `/agents` | Agents | agents_threads + agents_messages — BUILT (schema_v4 pending deploy to Supabase) |
 
 ---
 
 ## CF Functions (`functions/api/`)
 
-`auth/`, `capture`, `chunks`, `decisions`, `github`, `imp`, `loops`, `notion`,
-`projects`, `room`, `search`, `sessions`, `tail`, `tasks`, `wire`, `chatgpt/`,
-`dumbfile`
+`auth/`, `agents`, `agents-secret`, `capture`, `chunks`, `decisions`, `github`, `imp`,
+`loops`, `notion`, `projects`, `room`, `search`, `sessions`, `tail`, `tasks`, `wire`,
+`chatgpt/`, `dumbfile`
 
 All use `functions/_lib.js` helpers: `json()`, `sbFetch()`, `requireAuth()`.
 
@@ -110,9 +110,10 @@ Watermarks stored at `C:\imp\scripts\.bridge-watermarks.json`.
 
 ---
 
-## Recent commits (main, as of 2026-07-25)
+## Recent commits (main, as of 2026-07-26)
 
 ```
+c530786  Add GitHub Actions deploy workflow (#4)
 de3fdce  Agents page mockup + HANDOFF.md fixes (#3)
 85a1dbc  Add project handoff (HANDOFF.md)
 a83584a  Hub v3 command center — full build (Fable + Codex reviewed)
@@ -129,30 +130,28 @@ Requires two GitHub Actions secrets (set in repo Settings → Secrets → Action
 - `CLOUDFLARE_API_TOKEN` — scoped to Account / Cloudflare Pages / Edit
 - `CLOUDFLARE_ACCOUNT_ID` — Cloudflare account ID
 
-The five Hub application secrets remain in Cloudflare Pages unchanged.
+The six Hub application secrets remain in Cloudflare Pages unchanged.
 
 ---
 
-## In design (not yet built)
+## Pending deploy
 
-### Agents page (`/agents`) — Codex security review complete, approved 2026-07-25
+### Agents page (`/agents`) — built, Codex review in progress (PR #5)
 
-Multi-agent collaboration page: Claude, Fable, Codex, ChatGPT as direct conversation contacts.
-Only the addressed agent responds. Non-secret turns are visible to Mandy in All Feed.
-Secret-backed turns, filtered tool results, and agent responses from secret turns are
-never injected into non-addressed agents' model context — only Mandy sees them in All Feed.
+Code is on branch `feature/agents-build`. `schema_v4.sql` has NOT been applied to
+Supabase yet — do not merge or deploy until Codex approves.
 
-**Server-side credential tool (approved design):**
-Secret slot textarea → dedicated CF Function → direct API call using the credential →
-strictly filtered result returned → agent receives result only, never the credential.
-Credential is never written to Supabase, never sent to any LLM.
+**What is built:**
+- `agents_threads` + `agents_messages` tables with RLS, UNIQUE(agent), service_role-only grants
+- `/api/agents` CF Function — GET thread/all-feed, POST send+respond, DELETE clear
+- `/api/agents-secret` CF Function — Secret Slot; allowlisted tools only; secret never stored or sent to LLM
+- `/agents` frontend — four-agent sidebar, conversation thread, All feed, Secret Slot UI
 
-The credential CF Function permits only server-allowlisted tools and destinations.
-No arbitrary URLs, generic proxying, external MCPs, or model-selected destinations
-may carry the credential. Allowlist is enforced server-side before any outbound call.
-
-Requires: `schema_v4.sql` (agents_threads, agents_messages), `/api/agents` CF Function,
-`/agents` frontend page. Mockup: `mockups/agents-page.html`.
+**Secret Slot design (implemented):**
+Secret slot textarea → `/api/agents-secret` CF Function → allowlisted tool at hardcoded destination →
+filtered result only returned → agent receives result only, never the credential.
+Credential is never written to Supabase, never sent to any LLM, cleared from form immediately on submit.
+Allowlist: `github-whoami`, `github-repos`. Add tools in `agents-secret.js` ALLOWED_TOOLS only.
 
 ---
 
