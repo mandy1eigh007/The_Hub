@@ -6,7 +6,13 @@ import {
   getAllAgentMessages,
   getAgentThread,
   sendAgentMessage,
+  sendSecretMessage,
 } from "../lib/api";
+
+const SECRET_TOOLS: { value: string; label: string }[] = [
+  { value: "github-whoami", label: "GitHub — identify token" },
+  { value: "github-repos",  label: "GitHub — list repos" },
+];
 import { fmtDate } from "../lib/format";
 
 const AGENTS: AgentName[] = ["claude", "fable", "codex", "chatgpt"];
@@ -48,6 +54,9 @@ export default function Agents() {
   const [sending, setSending]     = useState(false);
   const [error, setError]         = useState<string | null>(null);
   const [input, setInput]         = useState("");
+  const [secret, setSecret]       = useState("");
+  const [slotOpen, setSlotOpen]   = useState(false);
+  const [tool, setTool]           = useState(SECRET_TOOLS[0].value);
   const bottomRef                 = useRef<HTMLDivElement>(null);
 
   function scrollToBottom() {
@@ -104,11 +113,20 @@ export default function Agents() {
     setTimeout(scrollToBottom, 50);
 
     try {
-      const result = await sendAgentMessage({
-        agent: active as AgentName,
-        message: text,
-        thread_id: threadIds[active as AgentName],
-      });
+      const secretText = secret.trim();
+      const result = secretText
+        ? await sendSecretMessage({
+            agent: active as AgentName,
+            message: text,
+            secret: secretText,
+            tool,
+            thread_id: threadIds[active as AgentName],
+          })
+        : await sendAgentMessage({
+            agent: active as AgentName,
+            message: text,
+            thread_id: threadIds[active as AgentName],
+          });
       setThreadIds((prev) => ({ ...prev, [active]: result.thread_id }));
       setMsgs((prev) => ({
         ...prev,
@@ -118,6 +136,8 @@ export default function Agents() {
           result.reply,
         ],
       }));
+      setSecret("");
+      setSlotOpen(false);
       setTimeout(scrollToBottom, 100);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Send failed");
@@ -286,23 +306,70 @@ export default function Agents() {
               Select an agent above to start a conversation.
             </p>
           ) : (
-            <>
-              <input
-                className="flex-1 bg-slate-900 border border-slate-700 text-white px-3 py-2.5 text-sm focus:outline-none focus:border-sky-500 placeholder-slate-500"
-                placeholder={`Message ${AGENT_LABEL[active]}...`}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                disabled={sending}
-                autoComplete="off"
-              />
-              <button
-                type="submit"
-                disabled={sending || !input.trim()}
-                className="px-4 py-2 bg-sky-600 text-white text-sm font-medium hover:bg-sky-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                {sending ? "..." : "Send"}
-              </button>
-            </>
+            <div className="flex flex-col gap-2 flex-1 min-w-0">
+              <div className="flex gap-2">
+                <input
+                  className="flex-1 bg-slate-900 border border-slate-700 text-white px-3 py-2.5 text-sm focus:outline-none focus:border-sky-500 placeholder-slate-500"
+                  placeholder={`Message ${AGENT_LABEL[active]}...`}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  disabled={sending}
+                  autoComplete="off"
+                />
+                <button
+                  type="submit"
+                  disabled={sending || !input.trim()}
+                  className="px-4 py-2 bg-sky-600 text-white text-sm font-medium hover:bg-sky-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                >
+                  {sending ? "..." : "Send"}
+                </button>
+              </div>
+
+              {/* Secret slot */}
+              <div className="border border-red-500/20 rounded" style={{ background: "#160a0a" }}>
+                <button
+                  type="button"
+                  onClick={() => setSlotOpen((o) => !o)}
+                  className="w-full px-3 py-2 flex items-center justify-between text-xs text-red-400/60 hover:text-red-400/90 transition-colors"
+                >
+                  <span className="font-mono font-bold tracking-wide">
+                    SECRET SLOT — not saved, removed from this form after send
+                  </span>
+                  <span className="text-slate-700 shrink-0 ml-2">{slotOpen ? "[collapse]" : "[expand]"}</span>
+                </button>
+
+                {slotOpen && (
+                  <div className="px-3 pb-3 space-y-2 border-t border-red-500/20">
+                    <select
+                      className="w-full bg-slate-900 border border-red-500/20 text-red-300 font-mono text-xs px-2 py-1.5 focus:outline-none mt-2"
+                      value={tool}
+                      onChange={(e) => setTool(e.target.value)}
+                    >
+                      {SECRET_TOOLS.map((t) => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
+                    <textarea
+                      className="w-full border border-red-500/30 text-red-300 font-mono text-xs px-3 py-2 focus:outline-none focus:border-red-500/50 placeholder-red-900/60 resize-none"
+                      style={{ background: "#020817" }}
+                      rows={2}
+                      placeholder="Paste key or token here..."
+                      value={secret}
+                      onChange={(e) => setSecret(e.target.value)}
+                      autoComplete="off"
+                      autoCorrect="off"
+                      spellCheck={false}
+                    />
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-slate-700">
+                        Used by the Hub server for this action. Not sent to {AGENT_LABEL[active as AgentName]} or stored by the Hub.
+                      </p>
+                      <p className="text-xs text-red-900 shrink-0 ml-2">Hub server only</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
         </form>
       </div>

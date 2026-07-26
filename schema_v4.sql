@@ -21,3 +21,9 @@ ALTER TABLE agents_messages ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "auth users only" ON agents_threads  FOR ALL USING (auth.uid() IS NOT NULL);
 CREATE POLICY "auth users only" ON agents_messages FOR ALL USING (auth.uid() IS NOT NULL);
+
+-- Explicit Data API grants required by Supabase PostgREST
+GRANT SELECT, INSERT, UPDATE, DELETE ON agents_threads  TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON agents_messages TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON agents_threads  TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON agents_messages TO service_role;

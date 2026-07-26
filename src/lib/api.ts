@@ -406,3 +406,13 @@ export function sendAgentMessage(opts: {
 export function clearAgentThread(thread_id: string): Promise<{ ok: boolean }> {
   return request(`/api/agents?thread_id=${thread_id}`, { method: "DELETE" });
 }
+
+export function sendSecretMessage(opts: {
+  agent: AgentName;
+  message: string;
+  secret: string;
+  tool: string;
+  thread_id?: string;
+}): Promise<{ thread_id: string; user_message: AgentMessage; reply: AgentMessage }> {
+  return request("/api/agents-secret", { method: "POST", body: JSON.stringify(opts) });
+}
