@@ -113,12 +113,23 @@ Watermarks stored at `C:\imp\scripts\.bridge-watermarks.json`.
 ## Recent commits (main, as of 2026-07-25)
 
 ```
+de3fdce  Agents page mockup + HANDOFF.md fixes (#3)
 85a1dbc  Add project handoff (HANDOFF.md)
 a83584a  Hub v3 command center — full build (Fable + Codex reviewed)
 98eae3e  fix: update Claude model to claude-sonnet-4-5
 6284fb4  Import Replit export, clean workspace, and add handoff docs
-82227d0  Add files via upload
 ```
+
+## Auto-deploy
+
+`.github/workflows/deploy.yml` — triggers on push to main, runs `npm ci && npm run build`,
+deploys `dist/` via `cloudflare/wrangler-action@v3` (Direct Upload method).
+
+Requires two GitHub Actions secrets (set in repo Settings → Secrets → Actions):
+- `CLOUDFLARE_API_TOKEN` — scoped to Account / Cloudflare Pages / Edit
+- `CLOUDFLARE_ACCOUNT_ID` — Cloudflare account ID
+
+The five Hub application secrets remain in Cloudflare Pages unchanged.
 
 ---
 
