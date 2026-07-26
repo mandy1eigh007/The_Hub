@@ -28,7 +28,7 @@ const AGENT_MODEL: Record<AgentName, string> = {
   claude:  "Sonnet 4.6",
   fable:   "Fable 5",
   codex:   "o4-mini",
-  chatgpt: "GPT-4o",
+  chatgpt: "GPT-4.1",
 };
 
 const AGENT_COLOR: Record<AgentName | "mandy", string> = {
@@ -62,6 +62,12 @@ export default function Agents() {
   function scrollToBottom() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }
+
+  // Clear secret whenever agent changes — prevents cross-agent secret submission
+  useEffect(() => {
+    setSecret("");
+    setSlotOpen(false);
+  }, [active]);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,6 +106,8 @@ export default function Agents() {
     setSending(true);
     setError(null);
     setInput("");
+    setSecret("");
+    setSlotOpen(false);
 
     const optimistic: AgentMessage = {
       id: `opt-${Date.now()}`,
@@ -141,6 +149,7 @@ export default function Agents() {
       setTimeout(scrollToBottom, 100);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Send failed");
+      setInput(text);
       setMsgs((prev) => ({
         ...prev,
         [active]: (prev[active] || []).filter((m) => m.id !== optimistic.id),
