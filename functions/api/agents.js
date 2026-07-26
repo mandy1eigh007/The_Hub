@@ -129,14 +129,15 @@ export async function onRequestPost({ request, env }) {
 
   const { agent, message, thread_id } = body;
   if (!validAgent(agent)) return json({ error: "unknown agent" }, 400);
-  if (!message?.trim()) return json({ error: "message required" }, 400);
+  if (typeof message !== "string" || !message.trim() || message.length > 4000) return json({ error: "message required (1–4000 chars)" }, 400);
   if (thread_id !== undefined && !isValidUUID(thread_id)) return json({ error: "invalid thread_id" }, 400);
 
   // Resolve and verify thread ownership to prevent cross-agent history leak
   let threadId;
   if (thread_id) {
     const { data: owned, ok } = await sbFetch(env, `agents_threads?id=eq.${thread_id}&agent=eq.${encodeURIComponent(agent)}&limit=1`);
-    if (!ok || !owned?.length) return json({ error: "thread not found" }, 404);
+    if (!ok) return json({ error: "Thread lookup failed" }, 502);
+    if (!owned?.length) return json({ error: "thread not found" }, 404);
     threadId = thread_id;
   } else {
     const thread = await getOrCreateThread(env, agent);
@@ -173,7 +174,11 @@ export async function onRequestPost({ request, env }) {
     body: JSON.stringify({ thread_id: threadId, agent, role: "assistant", content: replyText }),
     headers: { Prefer: "return=representation" },
   });
-  if (!replyOk) return json({ error: "Failed to save reply" }, 502);
+  if (!replyOk) {
+    // Compensating delete — keeps threads free of orphaned user messages
+    await sbFetch(env, `agents_messages?id=eq.${userMsg.id}`, { method: "DELETE" });
+    return json({ error: "Failed to save reply" }, 502);
+  }
   const replyMsg = Array.isArray(replyMsgArr) ? replyMsgArr[0] : replyMsgArr;
 
   return json({ thread_id: threadId, user_message: userMsg, reply: replyMsg });

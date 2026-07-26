@@ -11,6 +11,7 @@ import { json, sbFetch } from "../_lib.js";
 
 const MAX_BODY_BYTES = 512 * 1024;
 const PROVIDER_TIMEOUT_MS = 30_000;
+const TOOL_TIMEOUT_MS = 10_000;
 
 const AGENTS = {
   claude:  { provider: "anthropic", model: "claude-sonnet-4-6" },
@@ -24,31 +25,45 @@ const AGENTS = {
 // Never add generic proxy, arbitrary URL, or model-selected destination.
 const ALLOWED_TOOLS = {
   "github-whoami": async (secret) => {
-    const res = await fetch("https://api.github.com/user", {
-      headers: {
-        Authorization: `Bearer ${secret}`,
-        "User-Agent": "the-hub/1.0",
-        Accept: "application/vnd.github+json",
-      },
-    });
-    if (!res.ok) return { valid: false, status: res.status };
-    const d = await res.json();
-    return { valid: true, login: d.login, name: d.name, public_repos: d.public_repos };
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TOOL_TIMEOUT_MS);
+    try {
+      const res = await fetch("https://api.github.com/user", {
+        signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${secret}`,
+          "User-Agent": "the-hub/1.0",
+          Accept: "application/vnd.github+json",
+        },
+      });
+      if (!res.ok) return { valid: false, status: res.status };
+      const d = await res.json();
+      return { valid: true, login: d.login, name: d.name, public_repos: d.public_repos };
+    } finally {
+      clearTimeout(timer);
+    }
   },
   "github-repos": async (secret) => {
-    const res = await fetch("https://api.github.com/user/repos?per_page=30&sort=updated", {
-      headers: {
-        Authorization: `Bearer ${secret}`,
-        "User-Agent": "the-hub/1.0",
-        Accept: "application/vnd.github+json",
-      },
-    });
-    if (!res.ok) return { valid: false, status: res.status };
-    const data = await res.json();
-    return {
-      valid: true,
-      repos: data.map((r) => ({ name: r.full_name, private: r.private, pushed_at: r.pushed_at })),
-    };
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TOOL_TIMEOUT_MS);
+    try {
+      const res = await fetch("https://api.github.com/user/repos?per_page=30&sort=updated", {
+        signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${secret}`,
+          "User-Agent": "the-hub/1.0",
+          Accept: "application/vnd.github+json",
+        },
+      });
+      if (!res.ok) return { valid: false, status: res.status };
+      const data = await res.json();
+      return {
+        valid: true,
+        repos: data.map((r) => ({ name: r.full_name, private: r.private, pushed_at: r.pushed_at })),
+      };
+    } finally {
+      clearTimeout(timer);
+    }
   },
 };
 
@@ -138,17 +153,19 @@ export async function onRequestPost({ request, env }) {
 
   const { agent, message, secret, tool, thread_id } = body;
 
-  // Validate all inputs before any side effects
+  // Validate all inputs before any side effects — type + length checks defend against prototype tricks
   if (!validAgent(agent)) return json({ error: "unknown agent" }, 400);
-  if (!secret?.trim()) return json({ error: "secret required" }, 400);
+  if (typeof secret !== "string" || !secret.trim() || secret.length > 8000) return json({ error: "secret required (1–8000 chars)" }, 400);
   if (!validTool(tool)) return json({ error: "tool not in allowlist" }, 400);
+  if (message !== undefined && (typeof message !== "string" || message.length > 4000)) return json({ error: "message too long" }, 400);
   if (thread_id !== undefined && !UUID_RE.test(thread_id)) return json({ error: "invalid thread_id" }, 400);
 
   // Resolve and verify thread BEFORE running tool (prevents wasted outbound calls on bad input)
   let threadId;
   if (thread_id) {
     const { data: owned, ok } = await sbFetch(env, `agents_threads?id=eq.${thread_id}&agent=eq.${encodeURIComponent(agent)}&limit=1`);
-    if (!ok || !owned?.length) return json({ error: "thread not found" }, 404);
+    if (!ok) return json({ error: "Thread lookup failed" }, 502);
+    if (!owned?.length) return json({ error: "thread not found" }, 404);
     threadId = thread_id;
   } else {
     const thread = await getOrCreateThread(env, agent);
@@ -202,7 +219,11 @@ export async function onRequestPost({ request, env }) {
     body: JSON.stringify({ thread_id: threadId, agent, role: "assistant", content: replyText }),
     headers: { Prefer: "return=representation" },
   });
-  if (!replyOk) return json({ error: "Failed to save reply" }, 502);
+  if (!replyOk) {
+    // Compensating delete — keeps threads free of orphaned user messages
+    await sbFetch(env, `agents_messages?id=eq.${userMsg.id}`, { method: "DELETE" });
+    return json({ error: "Failed to save reply" }, 502);
+  }
   const replyMsg = Array.isArray(replyMsgArr) ? replyMsgArr[0] : replyMsgArr;
 
   return json({ thread_id: threadId, user_message: userMsg, reply: replyMsg });
