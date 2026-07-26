@@ -17,6 +17,7 @@ import NotionPage from "./pages/NotionPage";
 import GitHub from "./pages/GitHub";
 import Tasks from "./pages/Tasks";
 import DumbFiles from "./pages/DumbFiles";
+import Agents from "./pages/Agents";
 
 function RequireAuth({ children }: { children: JSX.Element }) {
   if (!isAuthed()) return <Navigate to="/login" replace />;
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="/github"     element={<GitHub />} />
           <Route path="/tasks"      element={<Tasks />} />
           <Route path="/dumbfiles"  element={<DumbFiles />} />
+          <Route path="/agents"     element={<Agents />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

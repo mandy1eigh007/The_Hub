@@ -367,3 +367,42 @@ export function searchObsidian(q: string): Promise<{ query: string; results: Obs
 export function getObsidianNote(id: string): Promise<ObsidianNote> {
   return request<ObsidianNote>(`/api/obsidian?id=${encodeURIComponent(id)}`);
 }
+
+// ── Agents ────────────────────────────────────────────────────────────────────
+
+export type AgentName = "claude" | "fable" | "codex" | "chatgpt";
+
+export interface AgentThread {
+  id: string;
+  agent: AgentName;
+  created_at: string;
+}
+
+export interface AgentMessage {
+  id: string;
+  thread_id: string;
+  agent: AgentName;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+}
+
+export function getAgentThread(agent: AgentName): Promise<{ thread: AgentThread; messages: AgentMessage[] }> {
+  return request(`/api/agents?agent=${agent}`);
+}
+
+export function getAllAgentMessages(): Promise<AgentMessage[]> {
+  return request<AgentMessage[]>("/api/agents?all=1");
+}
+
+export function sendAgentMessage(opts: {
+  agent: AgentName;
+  message: string;
+  thread_id?: string;
+}): Promise<{ thread_id: string; user_message: AgentMessage; reply: AgentMessage }> {
+  return request("/api/agents", { method: "POST", body: JSON.stringify(opts) });
+}
+
+export function clearAgentThread(thread_id: string): Promise<{ ok: boolean }> {
+  return request(`/api/agents?thread_id=${thread_id}`, { method: "DELETE" });
+}

@@ -33,6 +33,7 @@ const NAV_GROUPS = [
     label: "Work",
     items: [
       { to: "/tasks",      label: "Tasks" },
+      { to: "/agents",     label: "Agents" },
       { to: "/dumbfiles",  label: "Dumb Files" },
     ],
   },

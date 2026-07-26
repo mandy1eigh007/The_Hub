@@ -58,7 +58,7 @@ dedicated database with no other app's data in it.
 
 ## CF secrets (all set, production)
 
-`SUPABASE_URL`, `HUB_SERVICE_KEY`, `OPENAI_API_KEY`, `NOTION_API_KEY`, `GITHUB_TOKEN`
+`SUPABASE_URL`, `HUB_SERVICE_KEY`, `OPENAI_API_KEY`, `NOTION_API_KEY`, `GITHUB_TOKEN`, `ANTHROPIC_API_KEY`
 
 ---
 
@@ -81,13 +81,13 @@ dedicated database with no other app's data in it.
 | `/github` | GitHub | PRs, repos, commits via GitHub API |
 | `/tasks` | Tasks | hub_tasks — visual ADHD board, full CRUD |
 | `/dumbfiles` | Dumb Files | dumb_files — GPT-4o HTML explainers |
-| `/agents` | Agents | agents_threads + agents_messages — IN DESIGN (schema_v4, not yet built) |
+| `/agents` | Agents | agents_threads + agents_messages — BUILT (schema_v4 pending deploy to Supabase) |
 
 ---
 
 ## CF Functions (`functions/api/`)
 
-`auth/`, `capture`, `chunks`, `decisions`, `github`, `imp`, `loops`, `notion`,
+`auth/`, `agents`, `capture`, `chunks`, `decisions`, `github`, `imp`, `loops`, `notion`,
 `projects`, `room`, `search`, `sessions`, `tail`, `tasks`, `wire`, `chatgpt/`,
 `dumbfile`
 
