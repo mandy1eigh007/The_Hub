@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agents — The Hub (Mockup)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600&family=DM+Mono&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #020817; }
+    .heading { font-family: 'Barlow Condensed', sans-serif; }
+    .mono { font-family: 'DM Mono', monospace; }
+  </style>
+</head>
+<body class="text-white min-h-screen">
+
+  <div class="flex h-screen overflow-hidden">
+
+    <!-- Hub nav (abbreviated) -->
+    <div class="w-44 shrink-0 border-r border-slate-800 flex flex-col" style="background:#0f172a">
+      <div class="px-4 py-4 border-b border-slate-800">
+        <p class="heading text-lg font-bold tracking-wide text-white">THE HUB</p>
+      </div>
+      <nav class="px-2 py-3 space-y-0.5 text-sm flex-1">
+        <p class="text-slate-600 text-xs font-bold tracking-widest uppercase px-2 pt-1 pb-1">Work</p>
+        <div class="px-2 py-1.5 text-slate-400 cursor-pointer rounded">Tasks</div>
+        <div class="px-2 py-1.5 bg-slate-800 text-white cursor-pointer rounded font-medium">Agents</div>
+        <div class="px-2 py-1.5 text-slate-400 cursor-pointer rounded">Room</div>
+        <p class="text-slate-600 text-xs font-bold tracking-widest uppercase px-2 pt-3 pb-1">Memory</p>
+        <div class="px-2 py-1.5 text-slate-400 cursor-pointer rounded">Vault</div>
+        <div class="px-2 py-1.5 text-slate-400 cursor-pointer rounded">Sessions</div>
+        <div class="px-2 py-1.5 text-slate-400 cursor-pointer rounded">IMP</div>
+      </nav>
+    </div>
+
+    <!-- Agent selector -->
+    <div class="w-44 shrink-0 border-r border-slate-800 flex flex-col" style="background:#0f172a">
+      <div class="px-3 py-3 border-b border-slate-800">
+        <p class="heading text-xs font-bold tracking-widest text-slate-500 uppercase">Conversations</p>
+      </div>
+      <div class="flex-1 py-2 space-y-0.5 px-1">
+
+        <!-- All feed -->
+        <div class="px-3 py-2 rounded text-slate-400 hover:bg-slate-800 cursor-pointer">
+          <p class="text-sm font-medium">All feed</p>
+          <p class="mono text-xs text-slate-600">shared view</p>
+        </div>
+
+        <div class="mx-2 my-2 border-t border-slate-800"></div>
+
+        <!-- Claude — ACTIVE -->
+        <div class="px-3 py-2.5 rounded bg-slate-800 border border-sky-500/30 cursor-pointer">
+          <p class="text-sm font-semibold text-sky-400">Claude</p>
+          <p class="mono text-xs text-slate-500 mt-0.5">Sonnet 4.6</p>
+        </div>
+
+        <!-- Fable -->
+        <div class="px-3 py-2.5 rounded hover:bg-slate-800 cursor-pointer">
+          <p class="text-sm font-medium text-slate-400">Fable</p>
+          <p class="mono text-xs text-slate-600 mt-0.5">Fable 5</p>
+        </div>
+
+        <!-- Codex -->
+        <div class="px-3 py-2.5 rounded hover:bg-slate-800 cursor-pointer">
+          <p class="text-sm font-medium text-slate-400">Codex</p>
+          <p class="mono text-xs text-slate-600 mt-0.5">o4-mini</p>
+        </div>
+
+        <!-- ChatGPT -->
+        <div class="px-3 py-2.5 rounded hover:bg-slate-800 cursor-pointer">
+          <p class="text-sm font-medium text-slate-400">ChatGPT</p>
+          <p class="mono text-xs text-slate-600 mt-0.5">GPT-4o</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conversation -->
+    <div class="flex flex-1 flex-col min-w-0">
+
+      <!-- Header -->
+      <div class="px-5 py-3 border-b border-slate-800 flex items-center justify-between shrink-0" style="background:#0f172a">
+        <div>
+          <h1 class="heading text-2xl font-bold text-sky-400 tracking-wide">Claude</h1>
+          <p class="mono text-xs text-slate-500">Anthropic · Sonnet 4.6</p>
+        </div>
+        <div class="text-right">
+          <p class="text-xs text-slate-600">Fable, Codex, and ChatGPT observe this thread</p>
+          <p class="text-xs text-slate-700 mt-0.5">they do not respond unless you address them directly</p>
+        </div>
+      </div>
+
+      <!-- Feed -->
+      <div class="flex-1 overflow-y-auto p-5 space-y-5 min-h-0" style="background:#020817">
+
+        <!-- Mandy message -->
+        <div class="flex gap-3">
+          <span class="mono text-xs font-bold text-yellow-400 w-14 shrink-0 pt-0.5">Mandy</span>
+          <div class="flex-1">
+            <p class="text-sm text-slate-100">Can you check if that API key is still valid and pull the org list?</p>
+            <p class="text-xs text-slate-600 mt-1">2:14 PM</p>
+          </div>
+        </div>
+
+        <!-- Ephemeral slot indicator (visible in feed, content hidden) -->
+        <div class="flex gap-3">
+          <span class="mono text-xs font-bold text-red-400/70 w-14 shrink-0 pt-0.5">secret</span>
+          <div class="flex-1">
+            <p class="text-sm text-red-900 italic mono">[ephemeral — not stored, not shown]</p>
+            <p class="text-xs text-slate-700 mt-1">passed to Hub server only · never sent to any agent · cleared on send</p>
+          </div>
+        </div>
+
+        <!-- Claude response -->
+        <div class="flex gap-3">
+          <span class="mono text-xs font-bold text-sky-400 w-14 shrink-0 pt-0.5">Claude</span>
+          <div class="flex-1">
+            <p class="text-sm text-slate-100">Key is valid. Found 3 orgs: <span class="mono text-slate-300">anew-seattle</span>, <span class="mono text-slate-300">hub-dev</span>, <span class="mono text-slate-300">tradeg8</span>. Which one?</p>
+            <p class="text-xs text-slate-600 mt-1">2:14 PM</p>
+          </div>
+        </div>
+
+        <!-- Mandy follow-up -->
+        <div class="flex gap-3">
+          <span class="mono text-xs font-bold text-yellow-400 w-14 shrink-0 pt-0.5">Mandy</span>
+          <div class="flex-1">
+            <p class="text-sm text-slate-100">hub-dev. Pull the member list.</p>
+            <p class="text-xs text-slate-600 mt-1">2:15 PM</p>
+          </div>
+        </div>
+
+        <!-- Claude -->
+        <div class="flex gap-3">
+          <span class="mono text-xs font-bold text-sky-400 w-14 shrink-0 pt-0.5">Claude</span>
+          <div class="flex-1">
+            <p class="text-sm text-slate-100">3 members in hub-dev: mandy (owner), codex-bot (member), fable-bot (member). Want me to add someone or change permissions?</p>
+            <p class="text-xs text-slate-600 mt-1">2:15 PM</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Input area -->
+      <div class="border-t border-slate-800 p-4 space-y-2 shrink-0" style="background:#020817">
+
+        <!-- Main input -->
+        <div class="flex gap-2">
+          <input
+            class="flex-1 border border-slate-700 text-white px-3 py-2.5 text-sm focus:outline-none focus:border-sky-500 placeholder-slate-500"
+            style="background:#0f172a"
+            placeholder="Message Claude..."
+          />
+          <button class="px-4 py-2 bg-sky-600 text-white text-sm font-medium hover:bg-sky-500">
+            Send
+          </button>
+        </div>
+
+        <!-- Ephemeral slot — collapsed -->
+        <div class="border border-red-500/20 rounded" style="background:#160a0a">
+          <button class="w-full px-3 py-2 flex items-center justify-between text-xs text-red-400/60 hover:text-red-400/90">
+            <span class="mono font-bold tracking-wide">SECRET SLOT — not saved, cleared after send</span>
+            <span class="text-slate-700">[expand]</span>
+          </button>
+        </div>
+
+        <!-- Ephemeral slot — EXPANDED (shown for mockup) -->
+        <div class="border border-red-500/30 rounded" style="background:#160a0a">
+          <div class="px-3 py-2 border-b border-red-500/20 flex items-center justify-between">
+            <span class="mono text-xs font-bold text-red-400/80 tracking-wide">SECRET SLOT — not saved, cleared after send</span>
+            <span class="text-xs text-slate-600 cursor-pointer hover:text-slate-400">[collapse]</span>
+          </div>
+          <div class="p-3 space-y-2">
+            <textarea
+              class="w-full border border-red-500/30 text-red-300 mono text-xs px-3 py-2 focus:outline-none focus:border-red-500/50 placeholder-red-900/60 resize-none rounded"
+              style="background:#020817"
+              rows="2"
+              placeholder="Paste key or token here..."
+              autocomplete="off" autocorrect="off" spellcheck="false"
+            ></textarea>
+            <div class="flex items-center justify-between">
+              <p class="text-xs text-slate-700">Used by the Hub server for this action. Not sent to Claude or stored by the Hub.</p>
+              <p class="text-xs text-red-900">Hub server only</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- All-feed preview panel (right side, collapsed) -->
+    <!-- This would be a toggle — showing what Fable + Codex can see -->
+
+  </div>
+
+  <!-- MOCKUP LABEL -->
+  <div class="fixed bottom-4 right-4 bg-yellow-500/20 border border-yellow-500/40 px-3 py-1.5 text-yellow-400 mono text-xs">
+    MOCKUP — not functional
+  </div>
+
+</body>
+</html>

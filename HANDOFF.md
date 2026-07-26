@@ -81,6 +81,7 @@ dedicated database with no other app's data in it.
 | `/github` | GitHub | PRs, repos, commits via GitHub API |
 | `/tasks` | Tasks | hub_tasks — visual ADHD board, full CRUD |
 | `/dumbfiles` | Dumb Files | dumb_files — GPT-4o HTML explainers |
+| `/agents` | Agents | agents_threads + agents_messages — IN DESIGN (schema_v4, not yet built) |
 
 ---
 
@@ -112,14 +113,29 @@ Watermarks stored at `C:\imp\scripts\.bridge-watermarks.json`.
 ## Recent commits (main, as of 2026-07-25)
 
 ```
-20ac6c8  Fix Room null-cursor polling and stale schema comment
-baec0df  Fix all six Codex PR blockers
-5a8e4d5  Fix Codex review blockers: XSS vector and text-only rule violation
-072087d  Add visual task list, dumb file generator, and Room prompt bar
-bc5fbba  Fix 5 bugs found in self-review
-ef02b3e  Hub v3 command center: Room, Wire, Tail, IMP, ChatGPT, Notion, GitHub
-15b0050  Hub v2: full rebuild
+85a1dbc  Add project handoff (HANDOFF.md)
+a83584a  Hub v3 command center — full build (Fable + Codex reviewed)
+98eae3e  fix: update Claude model to claude-sonnet-4-5
+6284fb4  Import Replit export, clean workspace, and add handoff docs
+82227d0  Add files via upload
 ```
+
+---
+
+## In design (not yet built)
+
+### Agents page (`/agents`) — Codex security review complete, approved 2026-07-25
+
+Multi-agent collaboration page: Claude, Fable, Codex, ChatGPT as direct conversation contacts.
+All agents observe the shared thread; only the addressed agent responds.
+
+**Server-side credential tool (approved design):**
+Secret slot textarea → dedicated CF Function → direct API call using the credential →
+strictly filtered result returned → agent receives result only, never the credential.
+Credential is never written to Supabase, never sent to any LLM.
+
+Requires: `schema_v4.sql` (agents_threads, agents_messages), `/api/agents` CF Function,
+`/agents` frontend page. Mockup: `mockups/agents-page.html`.
 
 ---
 
