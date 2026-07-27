@@ -122,12 +122,12 @@ Watermarks stored at `C:\imp\scripts\.bridge-watermarks.json`.
 ## Recent commits (main, as of 2026-07-26)
 
 ```
+7c807f8  fix: strip markdown code fences from GPT-4o dumb file output
+76e06a2  docs: update HANDOFF with PR #6 merge commit
 5c8cfcb  feat(room,tail): scroll-hijack fix + TLDR summarize button (#6)
 d8655c6  feat(agents): Agents page — four-agent persistent chat with Secret Slot (#5)
 c530786  Add GitHub Actions deploy workflow (#4)
 de3fdce  Agents page mockup + HANDOFF.md fixes (#3)
-85a1dbc  Add project handoff (HANDOFF.md)
-a83584a  Hub v3 command center — full build (Fable + Codex reviewed)
 ```
 
 ## Auto-deploy
@@ -152,6 +152,7 @@ Merged in PR #5 (d8655c6). `schema_v4.sql` applied to Supabase 2026-07-26.
 - `/api/agents` CF Function — GET thread/all-feed, POST send+respond, DELETE clear
 - `/api/agents-secret` CF Function — Secret Slot; allowlisted tools only; secret never stored or sent to LLM
 - `/agents` frontend — four-agent sidebar (Claude Sonnet 4.6, Fable 5, GPT-5 mini, GPT-4.1), All feed, Secret Slot UI
+- **Model note:** `gpt-5-mini` is a reasoning model; AGENTS config carries `reasoning: true` so `callOpenAI` sends `max_completion_tokens` (not `max_tokens`). Removing that flag causes a 400 from OpenAI and zero messages saved.
 
 **Secret Slot design:**
 Secret slot textarea → `/api/agents-secret` CF Function → allowlisted tool at hardcoded destination →
