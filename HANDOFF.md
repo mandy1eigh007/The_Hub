@@ -152,6 +152,7 @@ Merged in PR #5 (d8655c6). `schema_v4.sql` applied to Supabase 2026-07-26.
 - `/api/agents` CF Function — GET thread/all-feed, POST send+respond, DELETE clear
 - `/api/agents-secret` CF Function — Secret Slot; allowlisted tools only; secret never stored or sent to LLM
 - `/agents` frontend — four-agent sidebar (Claude Sonnet 4.6, Fable 5, GPT-5 mini, GPT-4.1), All feed, Secret Slot UI
+- **Model note:** `gpt-5-mini` is a reasoning model; AGENTS config carries `reasoning: true` so `callOpenAI` sends `max_completion_tokens` (not `max_tokens`). Removing that flag causes a 400 from OpenAI and zero messages saved.
 
 **Secret Slot design:**
 Secret slot textarea → `/api/agents-secret` CF Function → allowlisted tool at hardcoded destination →

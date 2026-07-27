@@ -6,7 +6,7 @@ const PROVIDER_TIMEOUT_MS = 30_000;
 const AGENTS = {
   claude:  { provider: "anthropic", model: "claude-sonnet-4-6" },
   fable:   { provider: "anthropic", model: "claude-fable-5" },
-  codex:   { provider: "openai",    model: "gpt-4.1-mini" },
+  codex:   { provider: "openai",    model: "gpt-5-mini", reasoning: true },
   chatgpt: { provider: "openai",    model: "gpt-4.1" },
 };
 
