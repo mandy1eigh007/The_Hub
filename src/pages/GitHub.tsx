@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getGitHubPRs,
   getGitHubRepos,
@@ -19,36 +19,51 @@ export default function GitHub() {
   const [activeRepo, setActiveRepo] = useState<string | null>(null);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState<string | null>(null);
+  const loadIdRef               = useRef(0);
 
   useEffect(() => {
     load("prs");
   }, []);
 
   async function load(v: View, repo?: string) {
+    const id = ++loadIdRef.current;
     setLoading(true);
     setError(null);
     try {
       if (v === "prs") {
         const data = await getGitHubPRs();
+        if (id !== loadIdRef.current) return;
         setPrs(data);
       } else if (v === "repos") {
         const data = await getGitHubRepos();
+        if (id !== loadIdRef.current) return;
         setRepos(data);
       } else if (v === "commits" && repo) {
-        const data = await getGitHubCommits(repo);
-        setCommits(data);
         setActiveRepo(repo);
+        setCommits([]);
+        const data = await getGitHubCommits(repo);
+        if (id !== loadIdRef.current) return;
+        setCommits(data);
       }
     } catch (e) {
+      if (id !== loadIdRef.current) return;
       setError(e instanceof Error ? e.message : "Load failed");
     } finally {
-      setLoading(false);
+      if (id === loadIdRef.current) setLoading(false);
     }
   }
 
   function switchView(v: View) {
     setView(v);
-    if (v !== "commits") load(v);
+    setError(null);
+    if (v !== "commits") {
+      load(v);
+    } else if (activeRepo) {
+      load("commits", activeRepo); // re-fetch if a repo was already selected
+    } else {
+      loadIdRef.current++; // no repo selected; invalidate in-flight, clear loading
+      setLoading(false);
+    }
   }
 
   return (
@@ -80,7 +95,7 @@ export default function GitHub() {
 
       {view === "prs" && (
         <ul className="divide-y divide-slate-800 border border-slate-800">
-          {prs.length === 0 && !loading && (
+          {prs.length === 0 && !loading && !error && (
             <li className="px-4 py-3 text-slate-500 text-sm">No open PRs.</li>
           )}
           {prs.map((pr) => (
@@ -115,7 +130,7 @@ export default function GitHub() {
 
       {view === "repos" && (
         <ul className="divide-y divide-slate-800 border border-slate-800">
-          {repos.length === 0 && !loading && (
+          {repos.length === 0 && !loading && !error && (
             <li className="px-4 py-3 text-slate-500 text-sm">No repos.</li>
           )}
           {repos.map((r) => (
@@ -150,7 +165,7 @@ export default function GitHub() {
           {activeRepo && (
             <p className="text-slate-400 text-sm mb-3 font-mono">{activeRepo}</p>
           )}
-          {!activeRepo && (
+          {!activeRepo && !error && (
             <p className="text-slate-500 text-sm">Select a repo from Repos to view commits.</p>
           )}
           <ul className="divide-y divide-slate-800 border border-slate-800">
