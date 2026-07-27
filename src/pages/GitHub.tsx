@@ -58,9 +58,11 @@ export default function GitHub() {
     setError(null);
     if (v !== "commits") {
       load(v);
+    } else if (activeRepo) {
+      load("commits", activeRepo); // re-fetch if a repo was already selected
     } else {
-      loadIdRef.current++; // invalidate any in-flight request; no new load needed
-      setLoading(false);   // nothing else will clear it since load() won't run
+      loadIdRef.current++; // no repo selected; invalidate in-flight, clear loading
+      setLoading(false);
     }
   }
 
