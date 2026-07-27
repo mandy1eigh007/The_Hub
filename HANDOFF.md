@@ -122,12 +122,12 @@ Watermarks stored at `C:\imp\scripts\.bridge-watermarks.json`.
 ## Recent commits (main, as of 2026-07-26)
 
 ```
+7c807f8  fix: strip markdown code fences from GPT-4o dumb file output
+76e06a2  docs: update HANDOFF with PR #6 merge commit
 5c8cfcb  feat(room,tail): scroll-hijack fix + TLDR summarize button (#6)
 d8655c6  feat(agents): Agents page — four-agent persistent chat with Secret Slot (#5)
 c530786  Add GitHub Actions deploy workflow (#4)
 de3fdce  Agents page mockup + HANDOFF.md fixes (#3)
-85a1dbc  Add project handoff (HANDOFF.md)
-a83584a  Hub v3 command center — full build (Fable + Codex reviewed)
 ```
 
 ## Auto-deploy

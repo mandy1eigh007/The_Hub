@@ -27,7 +27,7 @@ const AGENT_LABEL: Record<AgentName, string> = {
 const AGENT_MODEL: Record<AgentName, string> = {
   claude:  "Sonnet 4.6",
   fable:   "Fable 5",
-  codex:   "GPT-5 mini",
+  codex:   "GPT-4.1 mini",
   chatgpt: "GPT-4.1",
 };
 
