@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getGitHubPRs,
   getGitHubRepos,
@@ -19,37 +19,47 @@ export default function GitHub() {
   const [activeRepo, setActiveRepo] = useState<string | null>(null);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState<string | null>(null);
+  const loadIdRef               = useRef(0);
 
   useEffect(() => {
     load("prs");
   }, []);
 
   async function load(v: View, repo?: string) {
+    const id = ++loadIdRef.current;
     setLoading(true);
     setError(null);
     try {
       if (v === "prs") {
         const data = await getGitHubPRs();
+        if (id !== loadIdRef.current) return;
         setPrs(data);
       } else if (v === "repos") {
         const data = await getGitHubRepos();
+        if (id !== loadIdRef.current) return;
         setRepos(data);
       } else if (v === "commits" && repo) {
         const data = await getGitHubCommits(repo);
+        if (id !== loadIdRef.current) return;
         setCommits(data);
         setActiveRepo(repo);
       }
     } catch (e) {
+      if (id !== loadIdRef.current) return;
       setError(e instanceof Error ? e.message : "Load failed");
     } finally {
-      setLoading(false);
+      if (id === loadIdRef.current) setLoading(false);
     }
   }
 
   function switchView(v: View) {
     setView(v);
     setError(null);
-    if (v !== "commits") load(v);
+    if (v !== "commits") {
+      load(v);
+    } else {
+      loadIdRef.current++; // invalidate any in-flight request; no new load needed
+    }
   }
 
   return (
