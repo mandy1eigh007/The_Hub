@@ -39,10 +39,11 @@ export default function GitHub() {
         if (id !== loadIdRef.current) return;
         setRepos(data);
       } else if (v === "commits" && repo) {
+        setActiveRepo(repo);
+        setCommits([]);
         const data = await getGitHubCommits(repo);
         if (id !== loadIdRef.current) return;
         setCommits(data);
-        setActiveRepo(repo);
       }
     } catch (e) {
       if (id !== loadIdRef.current) return;
