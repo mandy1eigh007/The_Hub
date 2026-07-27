@@ -61,6 +61,10 @@ dedicated database with no other app's data in it.
 
 `SUPABASE_URL`, `HUB_SERVICE_KEY`, `OPENAI_API_KEY`, `NOTION_API_KEY`, `GITHUB_TOKEN`, `ANTHROPIC_API_KEY`
 
+**GitHub token:** Production `GITHUB_TOKEN` was rotated from the valid Windows
+environment on 2026-07-27. Cloudflare secret presence was verified and the
+current `main` deployment was redeployed so the new secret is active.
+
 ---
 
 ## Pages and what they do
@@ -119,15 +123,15 @@ Watermarks stored at `C:\imp\scripts\.bridge-watermarks.json`.
 
 ---
 
-## Recent commits (main, as of 2026-07-26)
+## Recent commits (main, as of 2026-07-27)
 
 ```
+7966147  fix(github): readable error string + suppress false empty states on error (#8)
+133bad4  fix(agents): restore reasoning request for GPT-5 mini (#7)
 7c807f8  fix: strip markdown code fences from GPT-4o dumb file output
 76e06a2  docs: update HANDOFF with PR #6 merge commit
 5c8cfcb  feat(room,tail): scroll-hijack fix + TLDR summarize button (#6)
 d8655c6  feat(agents): Agents page — four-agent persistent chat with Secret Slot (#5)
-c530786  Add GitHub Actions deploy workflow (#4)
-de3fdce  Agents page mockup + HANDOFF.md fixes (#3)
 ```
 
 ## Auto-deploy
