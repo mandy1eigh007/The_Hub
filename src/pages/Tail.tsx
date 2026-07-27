@@ -61,7 +61,14 @@ export default function Tail() {
         } else if (sinceRef.current) {
           const fresh = await getTailLines({ since: sinceRef.current });
           if (fresh.length > 0) {
-            setLines((prev) => [...prev, ...fresh].slice(-300));
+            setLines((prev) => {
+              const next = [...prev, ...fresh];
+              // Only trim the top when at the bottom — prevents scroll-position jump while reading.
+              // Safety cap of 1000 prevents unbounded growth if scrolled up for a long time.
+              if (!scrolledUp.current) return next.slice(-300);
+              if (next.length > 1000) return next.slice(-1000);
+              return next;
+            });
             const last = fresh[fresh.length - 1];
             setSession(last.session_path);
             sinceRef.current = last.ts;
