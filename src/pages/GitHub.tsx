@@ -80,7 +80,7 @@ export default function GitHub() {
 
       {view === "prs" && (
         <ul className="divide-y divide-slate-800 border border-slate-800">
-          {prs.length === 0 && !loading && (
+          {prs.length === 0 && !loading && !error && (
             <li className="px-4 py-3 text-slate-500 text-sm">No open PRs.</li>
           )}
           {prs.map((pr) => (
@@ -115,7 +115,7 @@ export default function GitHub() {
 
       {view === "repos" && (
         <ul className="divide-y divide-slate-800 border border-slate-800">
-          {repos.length === 0 && !loading && (
+          {repos.length === 0 && !loading && !error && (
             <li className="px-4 py-3 text-slate-500 text-sm">No repos.</li>
           )}
           {repos.map((r) => (
@@ -150,7 +150,7 @@ export default function GitHub() {
           {activeRepo && (
             <p className="text-slate-400 text-sm mb-3 font-mono">{activeRepo}</p>
           )}
-          {!activeRepo && (
+          {!activeRepo && !error && (
             <p className="text-slate-500 text-sm">Select a repo from Repos to view commits.</p>
           )}
           <ul className="divide-y divide-slate-800 border border-slate-800">
