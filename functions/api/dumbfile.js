@@ -86,7 +86,9 @@ Return ONLY the complete HTML document, nothing else.`;
   }
 
   const oaiData = await oaiRes.json();
-  const html    = oaiData.choices?.[0]?.message?.content || "";
+  let html      = oaiData.choices?.[0]?.message?.content || "";
+  // Strip markdown code fences GPT-4o sometimes wraps around the HTML
+  html = html.replace(/^```(?:html)?\r?\n?/, "").replace(/\r?\n?```$/, "").trim();
 
   // Save to Supabase
   const fileTitle = title || `Hub State — ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
