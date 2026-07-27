@@ -94,6 +94,14 @@ dedicated database with no other app's data in it.
 
 All use `functions/_lib.js` helpers: `json()`, `sbFetch()`, `requireAuth()`.
 
+**`summarize`** — GET `/api/summarize?source=room|tail`. Fetches the 100 most recent
+messages from `room_messages` or `live_tail`, truncates each to 500 chars, and sends
+them to GPT-4.1 (Chat Completions) for a 3-5 sentence plain-English summary.
+Privacy boundary: every Summarize click sends up to 100 messages to OpenAI. The
+instruction is in the `system` role; transcript content is in the `user` role inside
+`<transcript>` delimiters to resist prompt injection. 20-second AbortController
+timeout. Summaries are not stored and go stale immediately when new messages arrive.
+
 ---
 
 ## Local sync daemon (`bridge/bridge.py`)
