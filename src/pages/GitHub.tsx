@@ -48,6 +48,7 @@ export default function GitHub() {
 
   function switchView(v: View) {
     setView(v);
+    setError(null);
     if (v !== "commits") load(v);
   }
 

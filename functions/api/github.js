@@ -19,9 +19,9 @@ async function ghGet(env, path) {
   const res = await fetch(`${GH_API}${path}`, { headers: ghHeaders(env) });
   if (!res.ok) {
     const text = await res.text();
-    let detail = text.slice(0, 200);
-    try { detail = JSON.parse(text).message || detail; } catch { /* not JSON */ }
-    return { error: `GitHub ${res.status}: ${detail}`, status: res.status };
+    let detail = text;
+    try { detail = JSON.parse(text).message || text; } catch { /* not JSON */ }
+    return { error: `GitHub ${res.status}: ${detail.slice(0, 200)}`, status: res.status };
   }
   return res.json();
 }
