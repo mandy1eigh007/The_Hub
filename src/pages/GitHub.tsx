@@ -59,6 +59,7 @@ export default function GitHub() {
       load(v);
     } else {
       loadIdRef.current++; // invalidate any in-flight request; no new load needed
+      setLoading(false);   // nothing else will clear it since load() won't run
     }
   }
 
