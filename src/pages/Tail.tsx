@@ -63,11 +63,9 @@ export default function Tail() {
           if (fresh.length > 0) {
             setLines((prev) => {
               const next = [...prev, ...fresh];
-              // Only trim the top when at the bottom — prevents scroll-position jump while reading.
-              // Safety cap of 1000 prevents unbounded growth if scrolled up for a long time.
-              if (!scrolledUp.current) return next.slice(-300);
-              if (next.length > 1000) return next.slice(-1000);
-              return next;
+              // Never trim while scrolled up — removing top rows jumps the reading position.
+              // Trimming resumes to 300 once the user scrolls back to the bottom.
+              return scrolledUp.current ? next : next.slice(-300);
             });
             const last = fresh[fresh.length - 1];
             setSession(last.session_path);
