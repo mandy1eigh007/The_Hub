@@ -1,13 +1,10 @@
-import { json, requireAuth, sbFetch } from "../_lib.js";
+import { json, sbFetch } from "../_lib.js";
 
 // POST /api/dumbfile   - generate an HTML dumb file via GPT-4o
 // GET  /api/dumbfile   - list saved dumb files
 // GET  /api/dumbfile?id=uuid - get a specific dumb file's HTML
 
 export async function onRequestGet({ request, env }) {
-  const authErr = await requireAuth(request, env);
-  if (authErr) return authErr;
-
   const u  = new URL(request.url);
   const id = u.searchParams.get("id");
 
@@ -23,9 +20,6 @@ export async function onRequestGet({ request, env }) {
 }
 
 export async function onRequestPost({ request, env }) {
-  const authErr = await requireAuth(request, env);
-  if (authErr) return authErr;
-
   if (!env.OPENAI_API_KEY) {
     return json({ error: "OPENAI_API_KEY not configured" }, 500);
   }
