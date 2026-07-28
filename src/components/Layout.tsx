@@ -6,7 +6,7 @@ const NAV_GROUPS = [
   {
     label: "Memory",
     items: [
-      { to: "/",        label: "Dashboard", end: true },
+      { to: "/",        label: "Home", end: true },
       { to: "/vault",   label: "Vault" },
       { to: "/sessions",label: "Sessions" },
       { to: "/decisions",label: "Decisions" },
