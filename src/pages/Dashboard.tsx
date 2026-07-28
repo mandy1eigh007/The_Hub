@@ -44,7 +44,7 @@ export default function Dashboard() {
           {lastDecision ? (
             <>
               <p className="text-white line-clamp-3">{lastDecision.content}</p>
-              <p className="text-xs text-slate-500 mt-2">{fmtDate(lastDecision.ts || lastDecision.created_at)}</p>
+              <p className="text-xs text-amber-400 mt-2">{fmtDate(lastDecision.ts || lastDecision.created_at)}</p>
             </>
           ) : (
             <p className="text-slate-500">No decisions recorded yet.</p>
@@ -66,7 +66,7 @@ export default function Dashboard() {
                 className="block px-4 py-3 hover:bg-slate-800"
               >
                 <span className="text-white">{s.projects?.name || s.projects?.slug || "Unassigned"}</span>
-                <span className="text-slate-500 text-sm ml-3">{fmtDate(s.started_at)}</span>
+                <span className="text-amber-400 text-sm ml-3">{fmtDate(s.started_at)}</span>
                 {s.agent && <span className="text-slate-400 text-sm ml-3">{s.agent}</span>}
               </Link>
             </li>

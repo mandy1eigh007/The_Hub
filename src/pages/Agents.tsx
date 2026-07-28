@@ -201,7 +201,7 @@ export default function Agents() {
             }`}
           >
             <p className="text-sm font-medium">All feed</p>
-            <p className="text-xs text-slate-600 font-mono">read only</p>
+            <p className="text-xs text-amber-400 font-mono">read only</p>
           </button>
 
           <div className="mx-2 my-2 border-t border-slate-800" />
@@ -220,7 +220,7 @@ export default function Agents() {
               <p className={`text-sm font-semibold ${active === agent ? AGENT_COLOR[agent] : ""}`}>
                 {AGENT_LABEL[agent]}
               </p>
-              <p className="text-xs text-slate-600 font-mono mt-0.5">{AGENT_MODEL[agent]}</p>
+              <p className="text-xs text-amber-400 font-mono mt-0.5">{AGENT_MODEL[agent]}</p>
             </button>
           ))}
         </div>

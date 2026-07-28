@@ -110,7 +110,7 @@ export default function GitHub() {
                   >
                     {pr.title}
                   </a>
-                  <p className="text-slate-500 text-xs mt-0.5">{pr.repo} &middot; {fmtDate(pr.updated_at)}</p>
+                  <p className="text-amber-400 text-xs mt-0.5">{pr.repo} &middot; {fmtDate(pr.updated_at)}</p>
                   {pr.labels.length > 0 && (
                     <div className="flex gap-1 mt-1 flex-wrap">
                       {pr.labels.map((l) => (
@@ -121,7 +121,7 @@ export default function GitHub() {
                     </div>
                   )}
                 </div>
-                <span className="text-xs text-slate-500 shrink-0">#{pr.id}</span>
+                <span className="text-xs text-amber-400 shrink-0">#{pr.id}</span>
               </div>
             </li>
           ))}
@@ -145,9 +145,9 @@ export default function GitHub() {
                   {r.full_name}
                 </a>
                 {r.description && (
-                  <p className="text-slate-500 text-xs mt-0.5 truncate">{r.description}</p>
+                  <p className="text-amber-400 text-xs mt-0.5 truncate">{r.description}</p>
                 )}
-                <p className="text-slate-600 text-xs mt-0.5">pushed {fmtDate(r.pushed_at)}</p>
+                <p className="text-amber-400 text-xs mt-0.5">pushed {fmtDate(r.pushed_at)}</p>
               </div>
               <button
                 onClick={() => { setView("commits"); load("commits", r.full_name); }}
@@ -181,7 +181,7 @@ export default function GitHub() {
                 </a>
                 <div className="min-w-0">
                   <p className="text-white text-sm truncate">{c.message}</p>
-                  <p className="text-slate-500 text-xs mt-0.5">{c.author} &middot; {fmtDate(c.date)}</p>
+                  <p className="text-amber-400 text-xs mt-0.5">{c.author} &middot; {fmtDate(c.date)}</p>
                 </div>
               </li>
             ))}

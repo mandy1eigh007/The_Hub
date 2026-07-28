@@ -44,7 +44,7 @@ export default function Loops() {
             <span className={`text-xs font-semibold ${l.resolved ? "text-emerald-300" : "text-amber-300"}`}>
               {l.resolved ? "RESOLVED" : "OPEN"}
             </span>
-            <span className="text-xs text-slate-500">{fmtDate(l.ts || l.created_at)}</span>
+            <span className="text-xs text-amber-400">{fmtDate(l.ts || l.created_at)}</span>
             {l.projects && (
               <span className="text-xs text-slate-400">{l.projects.name || l.projects.slug}</span>
             )}

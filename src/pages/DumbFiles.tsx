@@ -114,7 +114,7 @@ export default function DumbFiles() {
       ) : files.length === 0 ? (
         <div className="text-center py-16 border border-dashed border-slate-700">
           <p className="text-slate-500 text-lg mb-2">No dumb files yet</p>
-          <p className="text-slate-600 text-sm">Hit Generate Now to create your first visual explainer.</p>
+          <p className="text-amber-400 text-sm">Hit Generate Now to create your first visual explainer.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -133,7 +133,7 @@ export default function DumbFiles() {
                     <p className="text-slate-500 text-xs mt-0.5 font-mono">{f.context}</p>
                   )}
                 </div>
-                <span className="text-slate-600 text-xs shrink-0">{fmtDate(f.created_at)}</span>
+                <span className="text-amber-400 text-xs shrink-0">{fmtDate(f.created_at)}</span>
               </div>
             </button>
           ))}

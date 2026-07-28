@@ -38,7 +38,7 @@ export default function Decisions() {
               <li key={d.id} className="bg-slate-900 border border-slate-800 p-4">
                 <div className="flex flex-wrap items-baseline gap-x-3 mb-2">
                   <span className={`text-xs font-semibold ${s.cls}`}>{s.text}</span>
-                  <span className="text-xs text-slate-500">{fmtDate(d.ts || d.created_at)}</span>
+                  <span className="text-xs text-amber-400">{fmtDate(d.ts || d.created_at)}</span>
                   {d.projects && (
                     <span className="text-xs text-slate-400">
                       {d.projects.name || d.projects.slug}

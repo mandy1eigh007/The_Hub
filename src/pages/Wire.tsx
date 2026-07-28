@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { getWireMessages, WireMessage } from "../lib/api";
+import { getWireMessages, WireMessage, apiFetch } from "../lib/api";
 import { fmtDate } from "../lib/format";
 
 const POLL_MS = 5000;
@@ -13,6 +13,27 @@ const speakerColor: Record<string, string> = {
 export default function Wire() {
   const [messages, setMessages] = useState<WireMessage[]>([]);
   const [error, setError]       = useState<string | null>(null);
+  const [acking, setAcking]     = useState<string | null>(null);
+
+  async function ack(m: WireMessage) {
+    if (acking) return;
+    setAcking(m.id);
+    try {
+      await apiFetch("/api/wire", {
+        method: "POST",
+        body: JSON.stringify({
+          speaker: "Hub",
+          kind: "ack",
+          re: m.re || m.kind || m.speaker,
+          content: "Received.",
+        }),
+      });
+    } catch {
+      // non-fatal
+    } finally {
+      setAcking(null);
+    }
+  }
   const sinceRef                = useRef<string | null>(null);
   const bottomRef               = useRef<HTMLDivElement>(null);
   const initialLoad             = useRef(true);
@@ -77,14 +98,22 @@ export default function Wire() {
               <div className="flex items-center gap-2">
                 <span className={`text-xs font-mono font-bold ${color}`}>{label}</span>
                 {m.kind && (
-                  <span className="text-xs text-slate-600 font-mono">{m.kind}</span>
+                  <span className="text-xs text-amber-400 font-mono">{m.kind}</span>
                 )}
                 {m.re && (
-                  <span className="text-xs text-slate-600">re: {m.re}</span>
+                  <span className="text-xs text-amber-400">re: {m.re}</span>
                 )}
                 {m.ts && (
-                  <span className="text-xs text-slate-600 ml-auto">{fmtDate(m.ts)}</span>
+                  <span className="text-xs text-amber-400 ml-auto">{fmtDate(m.ts)}</span>
                 )}
+                <button
+                  onClick={() => ack(m)}
+                  disabled={acking === m.id}
+                  className="text-xs text-slate-600 hover:text-emerald-400 disabled:opacity-40 ml-1 font-mono"
+                  title="Acknowledge"
+                >
+                  {acking === m.id ? "..." : "ack"}
+                </button>
               </div>
               <p className="text-sm text-slate-200 whitespace-pre-wrap break-words">{m.content}</p>
               {m.artifact && (
