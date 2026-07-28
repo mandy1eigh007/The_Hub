@@ -30,6 +30,33 @@ export async function sbFetch(env, path, init = {}) {
   return { status: res.status, ok: res.ok, data };
 }
 
+// Validate the browser's Supabase access token before a Function performs a write.
+// Database calls still use the service key internally; this only establishes who may
+// invoke the write endpoint.
+export async function requireAuth(request, env) {
+  const authorization = request.headers.get("Authorization");
+  if (!authorization?.startsWith("Bearer ")) {
+    return json({ error: "Unauthorized" }, 401);
+  }
+
+  const token = authorization.slice("Bearer ".length).trim();
+  if (!token) return json({ error: "Unauthorized" }, 401);
+
+  try {
+    const res = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        apikey: env.HUB_SERVICE_KEY,
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!res.ok) return json({ error: "Unauthorized" }, 401);
+  } catch {
+    return json({ error: "Authentication unavailable" }, 503);
+  }
+
+  return null;
+}
+
 export async function sha256Hex(text) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
