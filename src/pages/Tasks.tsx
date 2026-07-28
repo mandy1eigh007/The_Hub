@@ -185,7 +185,7 @@ export default function Tasks() {
           <div key={status} className="mb-6">
             <div className="flex items-center gap-3 mb-3">
               <span className={`text-xs font-bold tracking-widest ${cfg.text}`}>{cfg.label}</span>
-              <span className="text-slate-600 text-xs">{items.length}</span>
+              <span className="text-amber-400 text-xs">{items.length}</span>
             </div>
 
             <div className="space-y-2">
@@ -281,7 +281,7 @@ function TaskCard({ task, projectColor, onMove, onDelete }: {
               {task.project}
             </span>
           )}
-          <span className="text-slate-600 text-xs">{timeAgo(task.created_at)}</span>
+          <span className="text-amber-400 text-xs">{timeAgo(task.created_at)}</span>
           {task.done_at && (
             <span className="text-emerald-600 text-xs">done {timeAgo(task.done_at)}</span>
           )}
@@ -302,7 +302,7 @@ function TaskCard({ task, projectColor, onMove, onDelete }: {
         ))}
         <button
           onClick={() => onDelete(task.id)}
-          className="text-xs text-slate-600 hover:text-red-400 px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="text-xs text-slate-400 hover:text-red-400 px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity"
           title="Delete"
         >
           del

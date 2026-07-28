@@ -30,7 +30,8 @@ export async function onRequestPost({ request, env }) {
   let body;
   try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
 
-  const { speaker = "Hub", kind = "ack", re = null, content } = body;
+  const { kind = "ack", re = null, content } = body;
+  const speaker = "hub";
   if (!content) return json({ error: "content required" }, 400);
 
   const row = {

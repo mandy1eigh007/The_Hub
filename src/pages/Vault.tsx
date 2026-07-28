@@ -66,7 +66,7 @@ export default function Vault() {
                       <span className={`text-xs font-semibold ${speakerColor(c.speaker)}`}>
                         {speakerLabel(c.speaker)}
                       </span>
-                      <span className="text-xs text-slate-500">{fmtDate(c.ts)}</span>
+                      <span className="text-xs text-amber-400">{fmtDate(c.ts)}</span>
                       {c.session_id && (
                         <Link
                           to={`/sessions/${c.session_id}`}
@@ -92,7 +92,7 @@ export default function Vault() {
                 {results.decisions.map((d) => (
                   <li key={d.id} className="bg-slate-900 border border-slate-800 p-4">
                     <p className="text-slate-200">{d.content}</p>
-                    <p className="text-xs text-slate-500 mt-2">{fmtDate(d.ts || d.created_at)}</p>
+                    <p className="text-xs text-amber-400 mt-2">{fmtDate(d.ts || d.created_at)}</p>
                   </li>
                 ))}
               </ul>
@@ -106,7 +106,7 @@ export default function Vault() {
                 {results.open_loops.map((l) => (
                   <li key={l.id} className="bg-slate-900 border border-slate-800 p-4">
                     <p className="text-slate-200">{l.content}</p>
-                    <p className="text-xs text-slate-500 mt-2">
+                    <p className="text-xs text-amber-400 mt-2">
                       {l.resolved ? "RESOLVED" : "OPEN"} — {fmtDate(l.ts || l.created_at)}
                     </p>
                   </li>

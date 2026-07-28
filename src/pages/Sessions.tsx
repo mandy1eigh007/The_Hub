@@ -44,7 +44,7 @@ export default function Sessions() {
                   <Link to={`/sessions/${s.id}`} className="block px-4 py-3 hover:bg-slate-800">
                     <span className="text-white">{fmtDate(s.started_at)}</span>
                     {s.ended_at && (
-                      <span className="text-slate-500 text-sm ml-3">to {fmtDate(s.ended_at)}</span>
+                      <span className="text-amber-400 text-sm ml-3">to {fmtDate(s.ended_at)}</span>
                     )}
                     {s.agent && <span className="text-slate-400 text-sm ml-3">{s.agent}</span>}
                   </Link>

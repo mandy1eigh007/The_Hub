@@ -109,7 +109,7 @@ export default function Wire() {
                 <button
                   onClick={() => ack(m)}
                   disabled={acking === m.id}
-                  className="text-xs text-slate-600 hover:text-emerald-400 disabled:opacity-40 ml-1 font-mono"
+                  className="text-xs text-slate-400 hover:text-emerald-400 disabled:opacity-40 ml-1 font-mono"
                   title="Acknowledge"
                 >
                   {acking === m.id ? "..." : "ack"}
