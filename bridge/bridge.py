@@ -235,6 +235,8 @@ def sync_wire(wm: dict):
             entry = json.loads(line)
         except json.JSONDecodeError:
             continue
+        if entry.get("hub_echo"):
+            continue
         rows.append({
             "ts":       entry.get("ts"),
             "speaker":  entry.get("speaker", "system").lower(),
@@ -269,16 +271,15 @@ def sync_hub_to_wire_file(wm: dict):
     with WIRE_JSONL.open("a", encoding="utf-8") as f:
         for row in rows:
             entry = json.dumps({
-                "ts":      row.get("ts") or row.get("created_at"),
-                "speaker": row.get("speaker", "hub").lower(),
-                "kind":    row.get("kind"),
-                "re":      row.get("re"),
-                "text":    row.get("content", ""),
+                "ts":       row.get("ts") or row.get("created_at"),
+                "speaker":  row.get("speaker", "hub").lower(),
+                "kind":     row.get("kind"),
+                "re":       row.get("re"),
+                "text":     row.get("content", ""),
+                "hub_echo": True,
             }, ensure_ascii=False)
             f.write(entry + "\n")
-    # Advance wire_line so sync_wire() doesn't re-push these lines on the next pass
-    if WIRE_JSONL.exists():
-        wm["wire_line"] = len(WIRE_JSONL.read_text(encoding="utf-8").splitlines())
+    # sync_wire() skips hub_echo lines, so no watermark adjustment needed here
     wm["wire_hub_reverse"] = rows[-1]["created_at"]
     log.info("wire: wrote %d Hub messages back to WIRE.jsonl", len(rows))
 
