@@ -78,35 +78,37 @@ Variables and Secrets -> add as Secret, then redeploy.
 
 ## 6. Deploy bridge.py (local sync daemon)
 
+Copy the script to its runtime location:
 ```
 copy /Y C:\Users\mandy\the_hub\bridge\bridge.py C:\imp\scripts\bridge.py
 ```
 
-Set required env var (already done if HUB_SERVICE_KEY is set):
+Set required env var (once, persists across reboots):
 ```powershell
 [System.Environment]::SetEnvironmentVariable("HUB_SERVICE_KEY", "<service_role_key>", "User")
 ```
 
-Run manually (one pass):
+**Install the autostart task (recommended):**
+```powershell
+powershell -ExecutionPolicy Bypass -File "C:\Users\mandy\the_hub\bridge\install-bridge-task.ps1"
+Start-ScheduledTask -TaskName HubBridge
+```
+
+The task runs at sign-in, hidden (no console window), and restarts automatically on failure.
+It syncs Room, Wire, Tail, and IMP. Obsidian is off by default.
+
+Run manually (one pass, for testing):
 ```
 python C:\imp\scripts\bridge.py --once
 ```
 
-Run continuously:
-```
-python C:\imp\scripts\bridge.py
-```
-
-Optional: Obsidian sync — set vault path before running:
+**Enable Obsidian sync (optional — explicit activation required):**
 ```powershell
 [System.Environment]::SetEnvironmentVariable("OBSIDIAN_VAULT_PATH", "C:\path\to\vault", "User")
 ```
-
-Schedule (runs at logon):
-```powershell
-$action  = New-ScheduledTaskAction -Execute "python" -Argument "C:\imp\scripts\bridge.py"
-$trigger = New-ScheduledTaskTrigger -AtLogOn
-Register-ScheduledTask -TaskName "HubBridge" -Action $action -Trigger $trigger -RunLevel Highest
+Then update the task action argument to add `--with-obsidian`, or run manually:
+```
+python C:\imp\scripts\bridge.py --with-obsidian
 ```
 
 ---
