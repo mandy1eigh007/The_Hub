@@ -482,12 +482,25 @@ def main():
         log.error('  [System.Environment]::SetEnvironmentVariable("HUB_SERVICE_KEY", "<value>", "User")')
         sys.exit(1)
 
+    VALID_SOURCES = {"room", "wire", "tail", "imp", "obsidian"}
+
     if args.source == "all":
         sources = {"room", "wire", "tail", "imp"}
         if args.with_obsidian:
             sources.add("obsidian")
     else:
         sources = {s.strip() for s in args.source.split(",")}
+        invalid = sources - VALID_SOURCES
+        if invalid:
+            log.error("Unknown source(s): %s. Valid: %s", sorted(invalid), sorted(VALID_SOURCES))
+            sys.exit(1)
+        if "obsidian" in sources and not args.with_obsidian:
+            log.error("--source obsidian requires --with-obsidian flag")
+            sys.exit(1)
+
+    if "obsidian" in sources and not os.environ.get("OBSIDIAN_VAULT_PATH"):
+        log.error("Obsidian sync requires OBSIDIAN_VAULT_PATH env var to be set")
+        sys.exit(1)
 
     log.info("bridge starting. sources=%s once=%s", sources, args.once)
 
