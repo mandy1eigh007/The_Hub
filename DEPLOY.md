@@ -137,6 +137,8 @@ These handle transcript capture. Bridge.py handles Room, IMP, Tail, Obsidian.
 
 ## Local development
 
+> **Requires Node 22+.** Wrangler 4 enforces `engines.node >=22.0.0`. Run `node -v` before starting; use `nvm use 22` or install from nodejs.org if needed.
+
 ```
 npm run pages:dev
 ```
