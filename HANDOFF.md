@@ -126,18 +126,20 @@ Watermarks stored at `C:\imp\scripts\.bridge-watermarks.json`.
 ## Recent commits (main, as of 2026-07-27)
 
 ```
+1bdcd7d  chore(deps): security upgrades - react-router v7, vite v6, wrangler v4 (#10)
+949377c  docs: update Hub handoff after PRs 7 and 8 (#9)
 7966147  fix(github): readable error string + suppress false empty states on error (#8)
 133bad4  fix(agents): restore reasoning request for GPT-5 mini (#7)
 7c807f8  fix: strip markdown code fences from GPT-4o dumb file output
-76e06a2  docs: update HANDOFF with PR #6 merge commit
 5c8cfcb  feat(room,tail): scroll-hijack fix + TLDR summarize button (#6)
-d8655c6  feat(agents): Agents page — four-agent persistent chat with Secret Slot (#5)
 ```
 
 ## Auto-deploy
 
 `.github/workflows/deploy.yml` — triggers on push to main, runs `npm ci && npm run build`,
 deploys `dist/` via `cloudflare/wrangler-action@v3` (Direct Upload method).
+
+**Node requirement:** CI pins Node 22 (`actions/setup-node@v4` with `node-version: '22'`). Local dev also requires Node 22+ — wrangler 4 enforces `engines.node >=22.0.0`. `.nvmrc` is set to `22`.
 
 Requires two GitHub Actions secrets (set in repo Settings → Secrets → Actions):
 - `CLOUDFLARE_API_TOKEN` — scoped to Account / Cloudflare Pages / Edit
