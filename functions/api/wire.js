@@ -1,4 +1,4 @@
-import { json, sbFetch, intParam } from "../_lib.js";
+import { json, sbFetch, intParam, requireAuth } from "../_lib.js";
 
 // GET /api/wire          - paginated wire messages (Claude <-> Codex traffic)
 // GET /api/wire?since=ts - messages after timestamp (for polling)
@@ -24,6 +24,9 @@ export async function onRequestGet({ request, env }) {
 }
 
 export async function onRequestPost({ request, env }) {
+  const authErr = await requireAuth(request, env);
+  if (authErr) return authErr;
+
   let body;
   try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
 
