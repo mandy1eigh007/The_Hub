@@ -15,7 +15,6 @@ const NAV_GROUPS = [
   {
     label: "Live",
     items: [
-      { to: "/room",  label: "Room" },
       { to: "/wire",  label: "Wire" },
       { to: "/tail",  label: "Live Tail" },
       { to: "/imp",   label: "IMP" },
