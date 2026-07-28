@@ -13,6 +13,75 @@ interface DumbFileFull extends DumbFileMeta {
   html: string;
 }
 
+let mermaidLoader: Promise<typeof import("mermaid").default> | null = null;
+
+function loadMermaid() {
+  if (!mermaidLoader) {
+    mermaidLoader = import("mermaid").then(({ default: mermaid }) => {
+      // Dumb Files are stored as self-contained HTML. Render diagrams here,
+      // inside the authenticated bundle, before the result enters the sandboxed
+      // iframe. That avoids a third-party script in private app explainers.
+      mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: "strict",
+        theme: "dark",
+        themeVariables: {
+          background: "#0d1117",
+          primaryColor: "#161b22",
+          primaryBorderColor: "#30363d",
+          primaryTextColor: "#e6edf3",
+          lineColor: "#6e7681",
+          secondaryColor: "#161b22",
+          tertiaryColor: "#21262d",
+        },
+      });
+      return mermaid;
+    });
+  }
+  return mermaidLoader;
+}
+
+async function renderMermaidDiagrams(html: string): Promise<string> {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const diagrams = Array.from(doc.querySelectorAll<HTMLElement>("pre.mermaid"));
+  if (diagrams.length === 0) return html;
+
+  const diagramStyles = doc.createElement("style");
+  diagramStyles.textContent = `
+    .mermaid-render { overflow-x: auto; margin: 1.25rem 0; padding: 1rem; background: #161b22; border: 1px solid #30363d; border-radius: 8px; }
+    .mermaid-render svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+    .diagram-fallback { margin: 1.25rem 0; padding: 1rem; color: #8b949e; background: #161b22; border: 1px solid #30363d; border-radius: 8px; }
+  `;
+  doc.head.append(diagramStyles);
+
+  const mermaid = await loadMermaid();
+
+  for (const diagram of diagrams) {
+    const definition = diagram.textContent?.trim();
+    if (!definition) continue;
+
+    try {
+      const { svg } = await mermaid.render(`dumb-file-${crypto.randomUUID()}`, definition);
+      const svgDoc = new DOMParser().parseFromString(svg, "image/svg+xml");
+      const svgElement = svgDoc.documentElement;
+      if (svgElement.nodeName !== "svg" || svgElement.querySelector("parsererror")) {
+        throw new Error("Mermaid returned invalid SVG");
+      }
+      const rendered = doc.createElement("div");
+      rendered.className = "mermaid-render";
+      rendered.append(doc.importNode(svgElement, true));
+      diagram.replaceWith(rendered);
+    } catch {
+      const fallback = doc.createElement("div");
+      fallback.className = "diagram-fallback";
+      fallback.textContent = "Diagram could not render. Read the step cards below.";
+      diagram.replaceWith(fallback);
+    }
+  }
+
+  return `<!doctype html>\n${doc.documentElement.outerHTML}`;
+}
+
 export default function DumbFiles() {
   const [files, setFiles]     = useState<DumbFileMeta[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +105,7 @@ export default function DumbFiles() {
   async function openFile(id: string) {
     try {
       const data = await apiFetch<DumbFileFull>(`/api/dumbfile?id=${id}`);
-      setViewing(data);
+      setViewing({ ...data, html: await renderMermaidDiagrams(data.html) });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Load failed");
     }
@@ -52,7 +121,7 @@ export default function DumbFiles() {
         body: JSON.stringify({ context: "hub-current-state" }),
       });
       setFiles((prev) => [{ id: data.id, title: data.title, context: "hub-current-state", created_at: new Date().toISOString() }, ...prev]);
-      setViewing(data);
+      setViewing({ ...data, html: await renderMermaidDiagrams(data.html) });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Generate failed");
     } finally {
