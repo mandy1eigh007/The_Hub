@@ -247,10 +247,14 @@ def sync_wire(wm: dict):
             "line_idx": start + i,
         })
 
-    pushed = sb_post("wire_messages", rows, on_conflict="line_idx")
-    if pushed:
+    if rows:
+        pushed = sb_post("wire_messages", rows, on_conflict="line_idx")
+        if pushed:
+            wm[key] = start + len(new_lines)
+            log.info("wire: pushed %d entries", pushed)
+    else:
+        # All new lines were hub_echo or blank — advance watermark without pushing
         wm[key] = start + len(new_lines)
-        log.info("wire: pushed %d entries", pushed)
 
 
 def sync_hub_to_wire_file(wm: dict):
