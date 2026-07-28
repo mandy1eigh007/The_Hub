@@ -321,9 +321,21 @@ def _extract_tail_content(entry: dict) -> tuple[str | None, str | None]:
     etype = entry.get("type", "")
     msg   = entry.get("message", {})
     role  = msg.get("role", etype)
-    speaker = "claude" if role == "assistant" else "mandy"
 
     content_raw = msg.get("content", "")
+    if role == "assistant":
+        speaker = "claude"
+    elif role == "user":
+        # Claude Code records tool results as role=user messages. They are not
+        # Mandy's words, even though they travel on the user side of the trace.
+        has_tool_result = isinstance(content_raw, list) and any(
+            isinstance(block, dict) and block.get("type") == "tool_result"
+            for block in content_raw
+        )
+        speaker = "tool" if has_tool_result else "mandy"
+    else:
+        speaker = "system"
+
     if isinstance(content_raw, str):
         text = content_raw.strip()
     elif isinstance(content_raw, list):
