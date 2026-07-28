@@ -1,4 +1,5 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { getStoredSession, logout } from "../lib/auth";
 
 const NAV_GROUPS = [
@@ -40,7 +41,13 @@ const NAV_GROUPS = [
 
 export default function Layout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const email = getStoredSession()?.user?.email;
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   async function handleSignOut() {
     await logout();
@@ -49,15 +56,26 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-950 text-slate-100">
-      <aside className="md:w-52 md:min-h-screen shrink-0 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 flex md:flex-col">
-        <div className="px-4 py-4 md:py-5 border-r md:border-r-0 md:border-b border-slate-800">
+      <aside className="fixed top-0 inset-x-0 z-50 shrink-0 bg-slate-900 border-b border-slate-800 md:sticky md:top-0 md:inset-x-auto md:z-auto md:w-56 md:h-screen md:self-start md:border-b-0 md:border-r md:flex md:flex-col">
+        <div className="flex items-center justify-between px-4 py-4 md:py-5 md:border-b md:border-slate-800">
           <span className="text-base font-bold tracking-wide text-white">THE HUB</span>
+          <button
+            onClick={() => setMobileMenuOpen((open) => !open)}
+            className="md:hidden border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:text-white hover:border-slate-500"
+            aria-expanded={mobileMenuOpen}
+            aria-controls="hub-navigation"
+          >
+            {mobileMenuOpen ? "Close" : "Menu"}
+          </button>
         </div>
 
-        <nav className="flex md:flex-col flex-1 overflow-x-auto overflow-y-auto md:py-2">
+        <nav
+          id="hub-navigation"
+          className={`${mobileMenuOpen ? "flex" : "hidden"} flex-col overflow-y-auto border-t border-slate-800 bg-slate-900 md:flex md:flex-1 md:border-t-0 md:py-2`}
+        >
           {NAV_GROUPS.map((group) => (
             <div key={group.label} className="md:mb-1">
-              <p className="hidden md:block px-3 pt-3 pb-1 text-xs font-semibold text-amber-400 uppercase tracking-wider">
+              <p className="px-4 pt-4 pb-1 text-xs font-semibold text-amber-400 uppercase tracking-wider md:px-3 md:pt-3">
                 {group.label}
               </p>
               {group.items.map((item) => (
@@ -68,8 +86,8 @@ export default function Layout() {
                   className={({ isActive }) =>
                     `px-4 py-2.5 text-sm whitespace-nowrap md:border-l-4 transition-colors block ${
                       isActive
-                        ? "border-sky-400 bg-slate-800 text-white md:border-l-4"
-                        : "border-transparent text-slate-400 hover:text-white hover:bg-slate-800/60 md:border-l-4 md:border-transparent"
+                        ? "border-l-4 border-sky-400 bg-slate-800 text-white"
+                        : "border-l-4 border-transparent text-slate-400 hover:text-white hover:bg-slate-800/60"
                     }`
                   }
                 >
@@ -78,6 +96,15 @@ export default function Layout() {
               ))}
             </div>
           ))}
+
+          <div className="px-4 py-4 border-t border-slate-800 md:hidden">
+            <button
+              onClick={handleSignOut}
+              className="text-sm text-slate-400 hover:text-white underline underline-offset-4"
+            >
+              Sign out
+            </button>
+          </div>
         </nav>
 
         <div className="hidden md:block px-4 py-4 border-t border-slate-800">
@@ -89,15 +116,9 @@ export default function Layout() {
             Sign out
           </button>
         </div>
-        <button
-          onClick={handleSignOut}
-          className="md:hidden px-4 py-3 text-sm text-slate-400 hover:text-white border-l border-slate-800"
-        >
-          Sign out
-        </button>
       </aside>
 
-      <main className="flex-1 min-w-0 p-4 md:p-6">
+      <main className="flex-1 min-w-0 px-4 pb-4 pt-20 md:p-6">
         <Outlet />
       </main>
     </div>
