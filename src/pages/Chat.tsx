@@ -110,7 +110,7 @@ export default function Chat() {
               }`}
             >
               <p className="truncate">{t.title || "Untitled"}</p>
-              <p className="text-slate-600 text-xs mt-0.5">{fmtDate(t.created_at)}</p>
+              <p className="text-amber-400 text-xs mt-0.5">{fmtDate(t.created_at)}</p>
             </button>
           ))}
         </div>

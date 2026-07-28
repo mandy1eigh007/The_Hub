@@ -200,7 +200,7 @@ export default function Room() {
         {groupedByTurn.map((group, gi) => (
           <div key={gi} className="space-y-3">
             {group.turn != null && (
-              <p className="text-xs text-slate-600 select-none">— turn {group.turn} —</p>
+              <p className="text-xs text-amber-400 select-none">— turn {group.turn} —</p>
             )}
             {group.items.map((m) => {
               const sp    = (m.speaker || "system").toLowerCase();
@@ -215,7 +215,7 @@ export default function Room() {
                       {m.content}
                     </p>
                     {m.ts && (
-                      <p className="text-xs text-slate-600 mt-0.5">{fmtDate(m.ts)}</p>
+                      <p className="text-xs text-amber-400 mt-0.5">{fmtDate(m.ts)}</p>
                     )}
                   </div>
                 </div>

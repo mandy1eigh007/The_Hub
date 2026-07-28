@@ -58,7 +58,7 @@ export default function Layout() {
         <nav className="flex md:flex-col flex-1 overflow-x-auto overflow-y-auto md:py-2">
           {NAV_GROUPS.map((group) => (
             <div key={group.label} className="md:mb-1">
-              <p className="hidden md:block px-3 pt-3 pb-1 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+              <p className="hidden md:block px-3 pt-3 pb-1 text-xs font-semibold text-amber-400 uppercase tracking-wider">
                 {group.label}
               </p>
               {group.items.map((item) => (

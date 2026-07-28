@@ -154,7 +154,7 @@ export default function Tail() {
         <div ref={bottomRef} />
       </div>
 
-      <p className="mt-2 text-xs text-slate-600">Refreshes every 3 seconds via bridge.py</p>
+      <p className="mt-2 text-xs text-amber-400">Refreshes every 3 seconds via bridge.py</p>
     </div>
   );
 }

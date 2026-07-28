@@ -64,7 +64,7 @@ export default function Imp() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-white">IMP</h1>
         {current?.updated_at && (
-          <span className="text-xs text-slate-500">synced {fmtDate(current.updated_at)}</span>
+          <span className="text-xs text-amber-400">synced {fmtDate(current.updated_at)}</span>
         )}
       </div>
 
@@ -118,7 +118,7 @@ export default function Imp() {
               Cancel
             </button>
           </div>
-          <p className="text-xs text-slate-600">
+          <p className="text-xs text-amber-400">
             Saves to Supabase. bridge.py will write back to disk on next run.
           </p>
         </div>

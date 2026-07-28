@@ -235,6 +235,8 @@ def sync_wire(wm: dict):
             entry = json.loads(line)
         except json.JSONDecodeError:
             continue
+        if entry.get("hub_echo"):
+            continue
         rows.append({
             "ts":       entry.get("ts"),
             "speaker":  entry.get("speaker", "system").lower(),
@@ -245,10 +247,45 @@ def sync_wire(wm: dict):
             "line_idx": start + i,
         })
 
-    pushed = sb_post("wire_messages", rows, on_conflict="line_idx")
-    if pushed:
+    if rows:
+        pushed = sb_post("wire_messages", rows, on_conflict="line_idx")
+        if pushed:
+            wm[key] = start + len(new_lines)
+            log.info("wire: pushed %d entries", pushed)
+    else:
+        # All new lines were hub_echo or blank — advance watermark without pushing
         wm[key] = start + len(new_lines)
-        log.info("wire: pushed %d entries", pushed)
+
+
+def sync_hub_to_wire_file(wm: dict):
+    """Pull Hub-posted wire_messages back to WIRE.jsonl so agents see them."""
+    since = wm.get("wire_hub_reverse", "")
+    params = {
+        "select": "id,ts,speaker,kind,re,content,created_at",
+        "speaker": "eq.hub",
+        "order": "created_at.asc",
+        "limit": "50",
+    }
+    if since:
+        params["created_at"] = f"gt.{since}"
+    rows = sb_get("wire_messages", params)
+    if not rows:
+        return
+    WIRE_JSONL.parent.mkdir(parents=True, exist_ok=True)
+    with WIRE_JSONL.open("a", encoding="utf-8") as f:
+        for row in rows:
+            entry = json.dumps({
+                "ts":       row.get("ts") or row.get("created_at"),
+                "speaker":  row.get("speaker", "hub").lower(),
+                "kind":     row.get("kind"),
+                "re":       row.get("re"),
+                "text":     row.get("content", ""),
+                "hub_echo": True,
+            }, ensure_ascii=False)
+            f.write(entry + "\n")
+    # sync_wire() skips hub_echo lines, so no watermark adjustment needed here
+    wm["wire_hub_reverse"] = rows[-1]["created_at"]
+    log.info("wire: wrote %d Hub messages back to WIRE.jsonl", len(rows))
 
 
 # ── IMP docs sync ────────────────────────────────────────────────────────────
@@ -446,6 +483,7 @@ def run_pass(sources: set[str], wm: dict):
     if "wire" in sources:
         try:
             sync_wire(wm)
+            sync_hub_to_wire_file(wm)
         except Exception as e:
             log.error("wire sync error: %s", e)
 

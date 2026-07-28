@@ -201,7 +201,7 @@ export default function Agents() {
             }`}
           >
             <p className="text-sm font-medium">All feed</p>
-            <p className="text-xs text-slate-600 font-mono">read only</p>
+            <p className="text-xs text-amber-400 font-mono">read only</p>
           </button>
 
           <div className="mx-2 my-2 border-t border-slate-800" />
@@ -220,7 +220,7 @@ export default function Agents() {
               <p className={`text-sm font-semibold ${active === agent ? AGENT_COLOR[agent] : ""}`}>
                 {AGENT_LABEL[agent]}
               </p>
-              <p className="text-xs text-slate-600 font-mono mt-0.5">{AGENT_MODEL[agent]}</p>
+              <p className="text-xs text-amber-400 font-mono mt-0.5">{AGENT_MODEL[agent]}</p>
             </button>
           ))}
         </div>
@@ -255,7 +255,7 @@ export default function Agents() {
               <button
                 onClick={handleClear}
                 disabled={sending}
-                className="text-xs text-slate-600 hover:text-red-400 px-2 py-1 border border-slate-800 hover:border-red-400/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="text-xs text-slate-400 hover:text-red-400 px-2 py-1 border border-slate-800 hover:border-red-400/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 clear
               </button>
@@ -275,7 +275,7 @@ export default function Agents() {
 
           {!loading && currentMessages.length === 0 && (
             <div className="py-12 text-center">
-              <p className="text-slate-600 text-sm">
+              <p className="text-amber-400 text-sm">
                 {active === "all"
                   ? "No messages yet."
                   : `No conversation with ${AGENT_LABEL[active]} yet.`}
@@ -294,7 +294,7 @@ export default function Agents() {
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-slate-100 whitespace-pre-wrap break-words">{m.content}</p>
-                  <p className="text-xs text-slate-700 mt-0.5">{fmtDate(m.created_at)}</p>
+                  <p className="text-xs text-amber-400 mt-0.5">{fmtDate(m.created_at)}</p>
                 </div>
               </div>
             );
@@ -319,7 +319,7 @@ export default function Agents() {
           style={{ background: "#020817" }}
         >
           {active === "all" ? (
-            <p className="flex-1 text-slate-600 text-sm py-2.5">
+            <p className="flex-1 text-amber-400 text-sm py-2.5">
               Select an agent above to start a conversation.
             </p>
           ) : (

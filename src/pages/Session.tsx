@@ -48,7 +48,7 @@ export default function Session() {
                 <span className={`text-xs font-semibold ${speakerColor(c.speaker)}`}>
                   {speakerLabel(c.speaker)}
                 </span>
-                <span className="text-xs text-slate-500">{fmtDate(c.ts)}</span>
+                <span className="text-xs text-amber-400">{fmtDate(c.ts)}</span>
               </div>
               <p className="text-slate-200 whitespace-pre-wrap break-words">{c.content}</p>
             </li>

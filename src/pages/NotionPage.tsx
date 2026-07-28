@@ -76,7 +76,7 @@ export default function NotionPage() {
                 >
                   <p className="text-white text-sm font-medium">{r.title}</p>
                   {r.edited && (
-                    <p className="text-slate-500 text-xs mt-0.5">{fmtDate(r.edited)}</p>
+                    <p className="text-amber-400 text-xs mt-0.5">{fmtDate(r.edited)}</p>
                   )}
                 </button>
               </li>
