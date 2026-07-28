@@ -36,9 +36,19 @@ function loadMermaid() {
         },
       });
       return mermaid;
+    }).catch((error) => {
+      // A tab kept open during a deploy can still reference Mermaid's old
+      // hashed filename. Let a fresh page load try the current filename.
+      mermaidLoader = null;
+      throw error;
     });
   }
   return mermaidLoader;
+}
+
+function isStaleModuleError(error: unknown): boolean {
+  return error instanceof TypeError
+    && /failed to fetch dynamically imported module|importing a module script failed/i.test(error.message);
 }
 
 async function renderMermaidDiagrams(html: string): Promise<string> {
@@ -88,6 +98,7 @@ export default function DumbFiles() {
   const [viewing, setViewing] = useState<DumbFileFull | null>(null);
   const [generating, setGenerating] = useState(false);
   const [error, setError]     = useState<string | null>(null);
+  const [reloadRequired, setReloadRequired] = useState(false);
 
   useEffect(() => { load(); }, []);
 
@@ -103,11 +114,18 @@ export default function DumbFiles() {
   }
 
   async function openFile(id: string) {
+    setError(null);
+    setReloadRequired(false);
     try {
       const data = await apiFetch<DumbFileFull>(`/api/dumbfile?id=${id}`);
       setViewing({ ...data, html: await renderMermaidDiagrams(data.html) });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Load failed");
+      if (isStaleModuleError(e)) {
+        setReloadRequired(true);
+        setError("Dumb Files updated while this Hub tab was open. Reload once, then open the file again.");
+      } else {
+        setError(e instanceof Error ? e.message : "Load failed");
+      }
     }
   }
 
@@ -175,7 +193,17 @@ export default function DumbFiles() {
       )}
 
       {error && (
-        <p className="text-red-400 text-sm mb-4 px-4 py-2 bg-red-400/10 border border-red-400/20">{error}</p>
+        <div className="text-red-400 text-sm mb-4 px-4 py-2 bg-red-400/10 border border-red-400/20 flex items-center justify-between gap-3">
+          <p>{error}</p>
+          {reloadRequired && (
+            <button
+              onClick={() => window.location.reload()}
+              className="shrink-0 border border-red-400/40 px-3 py-1 text-xs hover:bg-red-400/10"
+            >
+              reload Hub
+            </button>
+          )}
+        </div>
       )}
 
       {loading ? (
