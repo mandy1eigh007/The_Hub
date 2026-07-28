@@ -2,11 +2,11 @@
 bridge.py - Hub local bridge daemon.
 
 Syncs local files to Supabase so the Hub web app can read them:
-  ROOM.jsonl   -> room_messages table
-  WIRE.jsonl   -> wire_messages table
+  ROOM.jsonl        -> room_messages table
+  WIRE.jsonl        -> wire_messages table
   NOW/TODO/STATE.md -> imp_files table
-  active .jsonl session -> live_tail table
-  Obsidian vault (optional) -> obsidian_notes table
+  active .jsonl     -> live_tail table
+  Obsidian vault    -> obsidian_notes table (requires --with-obsidian)
 
 Also syncs Hub-posted room_messages back to ROOM.jsonl so room.ps1 sees them.
 
@@ -16,9 +16,10 @@ Requires:
   - pip install requests
 
 Run:
-  python bridge.py              # continuous loop (10s room/tail, 60s imp/obsidian)
-  python bridge.py --once       # single pass and exit
-  python bridge.py --source room  # only sync room
+  python bridge.py                    # continuous loop: room, wire, tail, imp only
+  python bridge.py --with-obsidian    # also sync Obsidian (requires OBSIDIAN_VAULT_PATH)
+  python bridge.py --once             # single pass and exit
+  python bridge.py --source room      # only sync room
 """
 
 import os, sys, json, time, hashlib, argparse, logging
@@ -472,7 +473,8 @@ def run_pass(sources: set[str], wm: dict):
 def main():
     parser = argparse.ArgumentParser(description="Hub bridge daemon")
     parser.add_argument("--once", action="store_true", help="single pass and exit")
-    parser.add_argument("--source", default="all", help="room|wire|tail|imp|obsidian|all")
+    parser.add_argument("--source", default="all", help="room|wire|tail|imp|obsidian|all (default: room,wire,tail,imp)")
+    parser.add_argument("--with-obsidian", action="store_true", help="also sync Obsidian vault (requires OBSIDIAN_VAULT_PATH env var)")
     args = parser.parse_args()
 
     if not SERVICE_KEY:
@@ -480,11 +482,25 @@ def main():
         log.error('  [System.Environment]::SetEnvironmentVariable("HUB_SERVICE_KEY", "<value>", "User")')
         sys.exit(1)
 
-    sources = (
-        {"room", "wire", "tail", "imp", "obsidian"}
-        if args.source == "all"
-        else {args.source}
-    )
+    VALID_SOURCES = {"room", "wire", "tail", "imp", "obsidian"}
+
+    if args.source == "all":
+        sources = {"room", "wire", "tail", "imp"}
+        if args.with_obsidian:
+            sources.add("obsidian")
+    else:
+        sources = {s.strip() for s in args.source.split(",")}
+        invalid = sources - VALID_SOURCES
+        if invalid:
+            log.error("Unknown source(s): %s. Valid: %s", sorted(invalid), sorted(VALID_SOURCES))
+            sys.exit(1)
+        if "obsidian" in sources and not args.with_obsidian:
+            log.error("--source obsidian requires --with-obsidian flag")
+            sys.exit(1)
+
+    if "obsidian" in sources and not os.environ.get("OBSIDIAN_VAULT_PATH"):
+        log.error("Obsidian sync requires OBSIDIAN_VAULT_PATH env var to be set")
+        sys.exit(1)
 
     log.info("bridge starting. sources=%s once=%s", sources, args.once)
 
