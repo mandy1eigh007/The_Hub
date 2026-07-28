@@ -6,12 +6,27 @@ const POLL_MS = 3000;
 const speakerColor: Record<string, string> = {
   claude: "text-sky-400",
   mandy:  "text-yellow-400",
+  tool:   "text-slate-400",
   system: "text-slate-500",
 };
 
 function shortPath(path: string): string {
   const parts = path.replace(/\\/g, "/").split("/");
   return parts[parts.length - 1] || path;
+}
+
+function tailTimestamp(ts: string | null): string {
+  if (!ts) return "--/-- --:--:--";
+  const date = new Date(ts);
+  if (Number.isNaN(date.getTime())) return "--/-- --:--:--";
+  return date.toLocaleString(undefined, {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
 }
 
 export default function Tail() {
@@ -138,12 +153,23 @@ export default function Tail() {
         )}
 
         {lines.map((line) => {
-          const sp    = (line.speaker || "system").toLowerCase();
+          const storedSpeaker = (line.speaker || "system").toLowerCase();
+          // Older rows were stored before bridge.py distinguished Claude's
+          // tool-result messages from Mandy's actual prompts.
+          const sp    = storedSpeaker === "mandy" && line.content.startsWith("[result:")
+            ? "tool"
+            : storedSpeaker;
           const color = speakerColor[sp] || "text-slate-300";
-          const label = sp === "claude" ? "Claude" : sp === "mandy" ? "Mandy" : sp;
+          const label = sp === "claude" ? "Claude" : sp === "mandy" ? "Mandy" : sp === "tool" ? "Tool" : sp;
           return (
             <div key={line.id} className="flex gap-2">
-              <span className={`shrink-0 w-12 font-bold ${color}`}>{label}</span>
+              <span
+                className="shrink-0 w-28 text-amber-300"
+                title={line.ts || "Timestamp unavailable"}
+              >
+                {tailTimestamp(line.ts)}
+              </span>
+              <span className={`shrink-0 w-14 font-bold ${color}`}>{label}</span>
               <span className="text-slate-200 whitespace-pre-wrap break-words flex-1 min-w-0">
                 {line.content}
               </span>
