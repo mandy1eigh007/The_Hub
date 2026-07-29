@@ -55,10 +55,10 @@ export default function Layout() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-slate-950 text-slate-100">
-      <aside className="fixed top-0 inset-x-0 z-50 shrink-0 bg-slate-900 border-b border-slate-800 md:sticky md:top-0 md:inset-x-auto md:z-auto md:w-56 md:h-screen md:self-start md:border-b-0 md:border-r md:flex md:flex-col">
-        <div className="flex items-center justify-between px-4 py-4 md:py-5 md:border-b md:border-slate-800">
-          <span className="text-base font-bold tracking-wide text-white">THE HUB</span>
+    <div className="min-h-screen flex flex-col md:flex-row bg-[#08060d] text-slate-100">
+      <aside className="fixed top-0 inset-x-0 z-50 shrink-0 border-b border-violet-950/60 bg-[#0c0914] md:sticky md:top-0 md:inset-x-auto md:z-auto md:h-screen md:w-56 md:self-start md:border-b-0 md:border-r md:flex md:flex-col">
+        <div className="flex items-center justify-between px-4 py-4 md:border-b md:border-violet-950/60 md:py-5">
+          <span className="text-base font-bold tracking-wide text-white">THE HUB <span aria-label="devil">😈</span></span>
           <button
             onClick={() => setMobileMenuOpen((open) => !open)}
             className="md:hidden border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:text-white hover:border-slate-500"
@@ -71,7 +71,7 @@ export default function Layout() {
 
         <nav
           id="hub-navigation"
-          className={`${mobileMenuOpen ? "flex" : "hidden"} flex-col overflow-y-auto border-t border-slate-800 bg-slate-900 md:flex md:flex-1 md:border-t-0 md:py-2`}
+          className={`${mobileMenuOpen ? "flex" : "hidden"} flex-col overflow-y-auto border-t border-violet-950/60 bg-[#0c0914] md:flex md:flex-1 md:border-t-0 md:py-2`}
         >
           {NAV_GROUPS.map((group) => (
             <div key={group.label} className="md:mb-1">
@@ -84,10 +84,10 @@ export default function Layout() {
                   to={item.to}
                   end={"end" in item ? item.end : undefined}
                   className={({ isActive }) =>
-                    `px-4 py-2.5 text-sm whitespace-nowrap md:border-l-4 transition-colors block ${
+                    `block whitespace-nowrap px-4 py-2.5 text-sm transition-colors md:border-l-4 ${
                       isActive
-                        ? "border-l-4 border-sky-400 bg-slate-800 text-white"
-                        : "border-l-4 border-transparent text-slate-400 hover:text-white hover:bg-slate-800/60"
+                        ? "border-l-4 border-violet-400 bg-violet-950/45 text-white"
+                        : "border-l-4 border-transparent text-slate-400 hover:bg-violet-950/25 hover:text-white"
                     }`
                   }
                 >
