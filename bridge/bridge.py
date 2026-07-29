@@ -5,7 +5,7 @@ Syncs local files to Supabase so the Hub web app can read them:
   ROOM.jsonl        -> room_messages table
   WIRE.jsonl        -> wire_messages table
   NOW/TODO/STATE.md -> imp_files table
-  active .jsonl     -> live_tail table
+  active Claude/Codex feeds -> live_tail table
   Obsidian vault    -> obsidian_notes table (requires --with-obsidian)
 
 Also syncs Hub-posted room_messages back to ROOM.jsonl so room.ps1 sees them.
@@ -51,6 +51,9 @@ IMP_DOCS     = [
     Path(r"C:\imp\STATE.md"),
 ]
 CLAUDE_PROJECTS = Path(r"C:\Users\mandy\.claude\projects")
+# Written by the approved Codex lifecycle hooks. Keep this outside IMP: live
+# agent conversation data may be personal and must never become an IMP file.
+CODEX_TAIL = Path(os.environ.get("CODEX_TAIL_PATH", r"C:\Users\mandy\.codex\hub-tail.jsonl"))
 OBSIDIAN_VAULT  = Path(os.environ.get("OBSIDIAN_VAULT_PATH", "")) if os.environ.get("OBSIDIAN_VAULT_PATH") else None
 
 # files that should never be synced to Obsidian notes table
@@ -426,6 +429,56 @@ def sync_tail(wm: dict):
         )
 
 
+def sync_codex_tail(wm: dict):
+    """Sync the normalized local Codex hook feed into the shared tail table."""
+    if not CODEX_TAIL.exists():
+        return
+
+    lines = CODEX_TAIL.read_text(encoding="utf-8", errors="replace").splitlines()
+    key = "codex_tail_line"
+    start = wm.get(key, 0)
+    new_lines = lines[start:]
+    if not new_lines:
+        return
+
+    rows = []
+    for i, line in enumerate(new_lines):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+
+        content = entry.get("content", "")
+        if not isinstance(content, str) or not content.strip():
+            continue
+        speaker = (entry.get("speaker") or "system").lower()
+        if speaker not in {"mandy", "codex", "system"}:
+            speaker = "system"
+        session_id = str(entry.get("session_id") or "unknown")
+        rows.append({
+            "session_path": f"codex:{session_id}",
+            "line_index":   start + i,
+            "speaker":      speaker,
+            "role":         entry.get("role") or "message",
+            "content":      content[:4000],
+            "ts":           entry.get("ts") or None,
+        })
+
+    if rows:
+        pushed = 0
+        for i in range(0, len(rows), 100):
+            pushed += sb_post("live_tail", rows[i:i + 100], on_conflict="session_path,line_index")
+        if pushed:
+            wm[key] = start + len(new_lines)
+            log.info("tail: pushed %d Codex feed entries", pushed)
+    else:
+        # Invalid or blank records must not permanently stall the feed.
+        wm[key] = start + len(new_lines)
+
+
 # ── Obsidian sync ─────────────────────────────────────────────────────────────
 
 def _obsidian_tags(content: str) -> list[str]:
@@ -502,6 +555,7 @@ def run_pass(sources: set[str], wm: dict):
     if "tail" in sources:
         try:
             sync_tail(wm)
+            sync_codex_tail(wm)
         except Exception as e:
             log.error("tail sync error: %s", e)
 

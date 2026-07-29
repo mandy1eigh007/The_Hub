@@ -214,10 +214,13 @@ export interface TailLine {
   ts: string | null;
 }
 
-export function getTailLines(opts: { since?: string; limit?: number } = {}): Promise<TailLine[]> {
+export type TailAgent = "all" | "claude" | "codex";
+
+export function getTailLines(opts: { since?: string; limit?: number; agent?: TailAgent } = {}): Promise<TailLine[]> {
   const p = new URLSearchParams();
   if (opts.since) p.set("since", opts.since);
   if (opts.limit) p.set("limit", String(opts.limit));
+  if (opts.agent && opts.agent !== "all") p.set("agent", opts.agent);
   return request<TailLine[]>(`/api/tail${p.toString() ? `?${p}` : ""}`);
 }
 
@@ -419,6 +422,8 @@ export function sendSecretMessage(opts: {
 
 // ── Summarize ─────────────────────────────────────────────────────────────────
 
-export function summarizeMessages(source: "room" | "tail"): Promise<{ summary: string }> {
-  return request<{ summary: string }>(`/api/summarize?source=${source}`);
+export function summarizeMessages(source: "room" | "tail", agent: TailAgent = "all"): Promise<{ summary: string }> {
+  const p = new URLSearchParams({ source });
+  if (source === "tail" && agent !== "all") p.set("agent", agent);
+  return request<{ summary: string }>(`/api/summarize?${p}`);
 }
