@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>A Tale of Two Agents</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0910;
+        --panel: #16121d;
+        --raised: #20192a;
+        --line: #40334f;
+        --text: #f3edf7;
+        --muted: #b6a8bf;
+        --purple: #bf8cff;
+        --lavender: #dbc4ff;
+        --gold: #f2c66d;
+        --green: #73d6ae;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: radial-gradient(circle at 75% 0%, #241636 0%, var(--bg) 36rem);
+        color: var(--text);
+        font: 16px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      main { max-width: 1180px; margin: 0 auto; padding: 42px 24px 60px; }
+      .eyebrow { color: var(--lavender); font: 700 12px/1.2 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .12em; text-transform: uppercase; }
+      h1 { margin: 9px 0 8px; font-size: clamp(30px, 5vw, 52px); line-height: 1; letter-spacing: -.04em; }
+      h2 { margin: 0; font-size: 20px; line-height: 1.2; }
+      p { margin: 0; color: var(--muted); }
+      .lede { max-width: 760px; font-size: 18px; }
+      .takeaway { margin-top: 22px; padding: 14px 16px; border-left: 3px solid var(--purple); background: #17121f; color: var(--text); }
+      .section { margin-top: 34px; }
+      .label { margin: 0 0 10px; color: var(--lavender); font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+      .city {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .tower, .card, .rule {
+        border: 1px solid var(--line);
+        background: linear-gradient(145deg, rgba(38, 28, 50, .95), rgba(18, 14, 25, .95));
+        border-radius: 13px;
+      }
+      .tower { min-height: 188px; padding: 18px; position: relative; overflow: hidden; }
+      .tower::after { content: ""; position: absolute; inset: auto -25px -38px auto; width: 120px; height: 120px; border: 1px solid rgba(191, 140, 255, .22); border-radius: 50%; }
+      .tower h2 { color: var(--text); }
+      .tower p { margin-top: 10px; font-size: 14px; }
+      .tower .who { display: block; margin-top: 18px; color: var(--purple); font: 700 12px ui-monospace, SFMono-Regular, Consolas, monospace; text-transform: uppercase; }
+      .tower.city-view { border-color: #7d5aab; background: linear-gradient(145deg, #302343, #17121f); }
+      .tower.city-view .who { color: var(--gold); }
+      .diagram { padding: 6px 12px; border: 1px solid var(--line); border-radius: 13px; background: #120f18; overflow-x: auto; }
+      .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+      .card { padding: 18px; min-height: 150px; }
+      .card h2 { color: var(--lavender); }
+      .card p { margin-top: 9px; font-size: 14px; }
+      .split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .rule { padding: 18px; }
+      .rule.good { border-color: rgba(115, 214, 174, .45); }
+      .rule.watch { border-color: rgba(242, 198, 109, .45); }
+      .rule h2 { font-size: 16px; }
+      .rule ul, .steps { margin: 10px 0 0; padding-left: 20px; color: var(--muted); }
+      .rule li, .steps li { margin: 6px 0; }
+      .steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 28px; list-style: none; padding: 0; counter-reset: step; }
+      .steps li { position: relative; padding: 14px 12px 14px 45px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+      .steps li::before { counter-increment: step; content: counter(step); position: absolute; left: 12px; top: 14px; color: var(--purple); font: 800 16px ui-monospace, SFMono-Regular, Consolas, monospace; }
+      strong { color: var(--text); }
+      @media (max-width: 760px) {
+        main { padding: 28px 16px 48px; }
+        .city, .grid, .split, .steps { grid-template-columns: 1fr; }
+        .tower { min-height: 150px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="eyebrow">The Hub · Visual SOP</div>
+        <h1>A Tale of Two Agents</h1>
+        <p class="lede">The Hub keeps Claude and Codex conversations separate when you need to find something fast, then joins them when you need the whole story.</p>
+        <div class="takeaway"><strong>Short version:</strong> use the tail that matches the agent you talked to. Use the city when you want to see both conversations in time order.</div>
+      </header>
+
+      <section class="section">
+        <p class="label">The three places you can look</p>
+        <div class="city">
+          <article class="tower">
+            <h2>Claude Tail</h2>
+            <p>Your Claude conversation with the local session details you already recognize.</p>
+            <span class="who">Mandy + Claude</span>
+          </article>
+          <article class="tower">
+            <h2>Codex Tail</h2>
+            <p>Your Codex prompts and Codex final answers, kept as their own searchable trail.</p>
+            <span class="who">Mandy + Codex</span>
+          </article>
+          <article class="tower city-view">
+            <h2>A Tale of Two Agents</h2>
+            <p>The city view. Both tails, arranged by time, when the handoff or the whole day matters.</p>
+            <span class="who">The merged timeline</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="label">How one message gets to the Hub</p>
+        <div class="diagram">
+          <pre class="mermaid">flowchart LR
+  M[Mandy talks] --> C[Claude local session]
+  M --> H[Codex safe hook]
+  C --> B[Local bridge]
+  H --> F[Codex local feed]
+  F --> B
+  B --> CT[Claude Tail]
+  B --> XT[Codex Tail]
+  CT --> CITY[A Tale of Two Agents]
+  XT --> CITY</pre>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="label">What each piece is doing</p>
+        <div class="grid">
+          <article class="card">
+            <h2>Claude local session</h2>
+            <p>The existing bridge reads the active Claude session and sends the useful message lines to Claude Tail.</p>
+          </article>
+          <article class="card">
+            <h2>Codex safe hook</h2>
+            <p>Codex records only your prompt and its final answer in a small local feed. It does not read the full transcript.</p>
+          </article>
+          <article class="card">
+            <h2>Local bridge</h2>
+            <p>The bridge delivers both feeds to the Hub database, where the three views can filter or merge them.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section split">
+        <article class="rule good">
+          <h2>What is captured</h2>
+          <ul>
+            <li>Your Codex prompt</li>
+            <li>Codex’s final answer</li>
+            <li>A timestamp and session label so the order stays clear</li>
+          </ul>
+        </article>
+        <article class="rule watch">
+          <h2>What stays out</h2>
+          <ul>
+            <li>Tool calls and tool output</li>
+            <li>Environment or terminal output</li>
+            <li>Full transcript files</li>
+            <li>Token-like strings and credential assignments are redacted before the feed is written</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="section">
+        <p class="label">Next time</p>
+        <ol class="steps">
+          <li><strong>Need Claude?</strong> Open Claude Tail.</li>
+          <li><strong>Need Codex?</strong> Open Codex Tail.</li>
+          <li><strong>Need the handoff?</strong> Open A Tale of Two Agents.</li>
+          <li><strong>Codex Tail empty?</strong> Check that the local bridge and approved Codex hooks are running.</li>
+        </ol>
+      </section>
+    </main>
+  </body>
+</html>
