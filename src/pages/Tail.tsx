@@ -1,14 +1,21 @@
 import { useEffect, useRef, useState } from "react";
-import { getTailLines, summarizeMessages, TailLine } from "../lib/api";
+import { getTailLines, summarizeMessages, TailAgent, TailLine } from "../lib/api";
 
 const POLL_MS = 3000;
 
 const speakerColor: Record<string, string> = {
   claude: "text-sky-400",
+  codex:  "text-emerald-400",
   mandy:  "text-yellow-400",
   tool:   "text-slate-400",
   system: "text-slate-500",
 };
+
+const TAIL_VIEWS: Array<{ id: TailAgent; label: string }> = [
+  { id: "claude", label: "Claude Tail" },
+  { id: "codex", label: "Codex Tail" },
+  { id: "all", label: "A Tale of Two Agents" },
+];
 
 function shortPath(path: string): string {
   const parts = path.replace(/\\/g, "/").split("/");
@@ -30,6 +37,7 @@ function tailTimestamp(ts: string | null): string {
 }
 
 export default function Tail() {
+  const [agent, setAgent]             = useState<TailAgent>("claude");
   const [lines, setLines]             = useState<TailLine[]>([]);
   const [error, setError]             = useState<string | null>(null);
   const [session, setSession]         = useState<string | null>(null);
@@ -61,11 +69,20 @@ export default function Tail() {
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
+    let cancelled = false;
+    initialLoad.current = true;
+    sinceRef.current = null;
+    scrolledUp.current = false;
+    setLines([]);
+    setSession(null);
+    setSummary(null);
+    setError(null);
 
     async function poll() {
       try {
         if (initialLoad.current) {
-          const fresh = await getTailLines({ limit: 80 });
+          const fresh = await getTailLines({ limit: 80, agent });
+          if (cancelled) return;
           setLines(fresh);
           if (fresh.length > 0) {
             setSession(fresh[fresh.length - 1].session_path);
@@ -74,7 +91,8 @@ export default function Tail() {
           initialLoad.current = false;
           setTimeout(scrollToBottom, 100);
         } else if (sinceRef.current) {
-          const fresh = await getTailLines({ since: sinceRef.current });
+          const fresh = await getTailLines({ since: sinceRef.current, agent });
+          if (cancelled) return;
           if (fresh.length > 0) {
             setLines((prev) => {
               const next = [...prev, ...fresh];
@@ -89,20 +107,23 @@ export default function Tail() {
           }
         }
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Poll failed");
+        if (!cancelled) setError(e instanceof Error ? e.message : "Poll failed");
       }
-      timer = setTimeout(poll, POLL_MS);
+      if (!cancelled) timer = setTimeout(poll, POLL_MS);
     }
 
     poll();
-    return () => clearTimeout(timer);
-  }, []);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [agent]);
 
   async function handleSummarize() {
     setSummarizing(true);
     setSummary(null);
     try {
-      const res = await summarizeMessages("tail");
+      const res = await summarizeMessages("tail", agent);
       setSummary(res.summary);
     } catch {
       setSummary("Summary unavailable — try again.");
@@ -114,11 +135,30 @@ export default function Tail() {
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] md:h-[calc(100vh-2rem)]">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-white">Live Tail</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-white">Live Tails</h1>
+          <div className="mt-2 flex flex-wrap gap-2" role="tablist" aria-label="Agent tail view">
+            {TAIL_VIEWS.map((view) => (
+              <button
+                key={view.id}
+                onClick={() => setAgent(view.id)}
+                aria-selected={agent === view.id}
+                role="tab"
+                className={`text-xs px-2 py-1 border transition-colors ${
+                  agent === view.id
+                    ? "border-amber-400 text-amber-300 bg-slate-800"
+                    : "border-slate-700 text-slate-400 hover:text-white hover:border-slate-500"
+                }`}
+              >
+                {view.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="flex items-center gap-3">
           {session && (
             <span className="text-xs text-slate-500 font-mono truncate max-w-xs">
-              {shortPath(session)}
+              {agent === "all" ? "Merged live feed" : shortPath(session)}
             </span>
           )}
           <button
@@ -148,7 +188,7 @@ export default function Tail() {
       >
         {lines.length === 0 && (
           <p className="text-slate-500">
-            No live session data yet. bridge.py must be running.
+            No {TAIL_VIEWS.find((view) => view.id === agent)?.label} data yet. bridge.py must be running.
           </p>
         )}
 
@@ -160,7 +200,7 @@ export default function Tail() {
             ? "tool"
             : storedSpeaker;
           const color = speakerColor[sp] || "text-slate-300";
-          const label = sp === "claude" ? "Claude" : sp === "mandy" ? "Mandy" : sp === "tool" ? "Tool" : sp;
+          const label = sp === "claude" ? "Claude" : sp === "codex" ? "Codex" : sp === "mandy" ? "Mandy" : sp === "tool" ? "Tool" : sp;
           return (
             <div key={line.id} className="flex gap-2">
               <span

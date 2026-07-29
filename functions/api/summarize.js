@@ -5,24 +5,38 @@ const MAX_MESSAGES = 100;
 
 const VALID_SOURCES = ["room", "tail"];
 
-// GET /api/summarize?source=room|tail
+// GET /api/summarize?source=room|tail&agent=all|claude|codex
 export async function onRequestGet({ request, env }) {
-  const source = new URL(request.url).searchParams.get("source");
+  const u = new URL(request.url);
+  const source = u.searchParams.get("source");
+  const agent = u.searchParams.get("agent") || "all";
   if (!VALID_SOURCES.includes(source)) {
     return json({ error: "source must be 'room' or 'tail'" }, 400);
+  }
+  if (source === "tail" && !["all", "claude", "codex"].includes(agent)) {
+    return json({ error: "agent must be 'all', 'claude', or 'codex'" }, 400);
   }
 
   const isRoom = source === "room";
   const table  = isRoom ? "room_messages" : "live_tail";
   const order  = isRoom ? "created_at.desc" : "ts.desc";
 
-  const { data, ok } = await sbFetch(env, `${table}?order=${order}&limit=${MAX_MESSAGES}`);
+  const p = new URLSearchParams({ order, limit: String(MAX_MESSAGES) });
+  if (!isRoom && agent === "codex") p.set("session_path", "like.codex:*");
+  if (!isRoom && agent === "claude") p.set("session_path", "not.like.codex:*");
+  const { data, ok } = await sbFetch(env, `${table}?${p.toString()}`);
   if (!ok) return json({ error: "Failed to load messages" }, 502);
 
   const messages = (data || []).reverse();
   if (!messages.length) return json({ summary: "Nothing to summarize yet." });
 
-  const label = isRoom ? "Room (shared AI message log)" : "Live Tail (active Claude session)";
+  const label = isRoom
+    ? "Room (shared AI message log)"
+    : agent === "codex"
+      ? "Codex Tail"
+      : agent === "claude"
+        ? "Claude Tail"
+        : "A Tale of Two Agents";
   const text  = messages
     .map((m) => `${(m.speaker || "system").toUpperCase()}: ${(m.content || "").slice(0, 500)}`)
     .join("\n");
