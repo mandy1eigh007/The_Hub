@@ -15,7 +15,6 @@ const NAV_GROUPS = [
     label: "Conversations",
     items: [
       { to: "/wire",  label: "Wire" },
-      { to: "/room",  label: "Room" },
     ],
   },
   {
