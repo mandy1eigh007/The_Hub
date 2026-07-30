@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AgentMessage, getAllAgentMessages, getImpFiles, ImpFile } from "../lib/api";
+import { getImpFiles, getTailLines, ImpFile, TailLine } from "../lib/api";
 import { fmtDate } from "../lib/format";
 import devilishImage from "../assets/home-imp-devilish.png";
 
-const POLL_MS = 30_000;
+const POLL_MS = 3_000;
 
 const QUICK_LINKS = [
   { to: "/imp", label: "IMP", title: "The memory that stays.", detail: "Current state, next steps, and the details worth keeping.", accent: "fuchsia" },
@@ -43,17 +43,20 @@ function preview(content: string | null | undefined, limit = 175): string {
   return clean.length > limit ? `${clean.slice(0, limit).trimEnd()}…` : clean;
 }
 
-function messageLabel(message: AgentMessage): string {
-  return message.role === "user"
+function messageLabel(message: TailLine): string {
+  const speaker = (message.speaker || "system").toLowerCase();
+  return speaker === "mandy"
     ? "Mandy"
-    : message.agent === "chatgpt"
-      ? "ChatGPT"
-      : message.agent.charAt(0).toUpperCase() + message.agent.slice(1);
+    : speaker === "codex"
+      ? "Codex"
+      : speaker === "claude"
+        ? "Claude"
+        : speaker;
 }
 
 export default function Dashboard() {
   const [impFiles, setImpFiles] = useState<ImpFile[]>([]);
-  const [messages, setMessages] = useState<AgentMessage[]>([]);
+  const [messages, setMessages] = useState<TailLine[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,10 +65,10 @@ export default function Dashboard() {
 
     async function load() {
       try {
-        const [files, agentMessages] = await Promise.all([getImpFiles(), getAllAgentMessages()]);
+        const [files, tailLines] = await Promise.all([getImpFiles(), getTailLines({ limit: 2, agent: "all" })]);
         if (!cancelled) {
           setImpFiles(files);
-          setMessages(agentMessages);
+          setMessages(tailLines);
           setError(null);
         }
       } catch (e) {
@@ -135,9 +138,9 @@ export default function Dashboard() {
               {loading ? (
                 <p className="text-sm text-slate-300">Loading recent check-ins...</p>
               ) : recentMessages.length === 0 ? (
-                <p className="text-sm text-slate-300">No agent messages yet. Start one from Agent conversations.</p>
+                <p className="text-sm text-slate-300">No live messages yet. The local bridge may still be catching up.</p>
               ) : recentMessages.map((message, index) => {
-                const speaker = message.role === "user" ? "mandy" : message.agent;
+                const speaker = (message.speaker || "system").toLowerCase();
                 return (
                   <div
                     key={message.id}
@@ -149,7 +152,7 @@ export default function Dashboard() {
                       <span className={`text-[10px] font-semibold uppercase tracking-[0.12em] ${AGENT_COLOR[speaker] || "text-slate-200"}`}>
                         {messageLabel(message)}
                       </span>
-                      <span className="text-[10px] text-slate-300">{fmtDate(message.created_at)}</span>
+                      <span className="text-[10px] text-slate-300">{message.ts ? fmtDate(message.ts) : "live"}</span>
                     </div>
                     <p className="mt-1 line-clamp-2 text-sm leading-5 text-slate-100">{message.content}</p>
                   </div>
@@ -157,8 +160,8 @@ export default function Dashboard() {
               })}
             </div>
 
-            <Link to="/agents" className="mt-6 inline-block text-[11px] font-semibold uppercase tracking-[0.12em] text-violet-100 hover:text-white">
-              Open agents
+            <Link to="/tail" className="mt-6 inline-block text-[11px] font-semibold uppercase tracking-[0.12em] text-violet-100 hover:text-white">
+              Open live tail
             </Link>
           </section>
         </div>
