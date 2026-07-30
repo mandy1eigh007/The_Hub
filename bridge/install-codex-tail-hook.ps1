@@ -20,16 +20,25 @@ if (-not $config.hooks) {
 function Add-CodexTailHook([string]$EventName) {
   $command = "powershell.exe -NoProfile -NonInteractive -File `"$hookScript`" -Event $EventName"
   $existing = @($config.hooks.$EventName)
-  if ($existing | Where-Object { $_.command -eq $command }) {
-    return
+  foreach ($group in $existing) {
+    if ($group.hooks -and @($group.hooks | Where-Object { $_.command -eq $command }).Count -gt 0) {
+      return
+    }
   }
 
+  # Older installer versions placed the handler directly in the event array.
+  # Codex requires a matcher group with a nested `hooks` array, so remove only
+  # that malformed duplicate before adding the valid group below.
+  $existing = @($existing | Where-Object { $_.command -ne $command })
   $entry = [pscustomobject]@{
     type = "command"
     command = $command
     timeout = 10
   }
-  $updated = @($existing) + $entry
+  $group = [pscustomobject]@{
+    hooks = @($entry)
+  }
+  $updated = @($existing) + $group
   if ($config.hooks.PSObject.Properties.Name -contains $EventName) {
     $config.hooks.$EventName = @($updated)
   } else {
