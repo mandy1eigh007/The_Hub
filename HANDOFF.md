@@ -114,7 +114,13 @@ Runs on Mandy's Windows machine. Syncs local files → Supabase every 10s (live
 sources) / 60s (slow sources).
 
 Sources: `ROOM.jsonl`, `WIRE.jsonl`, IMP files (`NOW.md`, `TODO.md`, `STATE.md`),
-live tail (active Claude session), Obsidian vault (non-sensitive notes only).
+live tail (active Claude session), and an explicitly selected Obsidian vault.
+
+`--with-agentmemory` is a separate, off-by-default source for only approved,
+de-identified, non-sensitive files in `C:\AgentMemory\Hub`. The bridge
+re-runs the local intake validation, requires approved-output metadata, and
+skips AgentMemory from generic Obsidian sync so the stricter gate cannot be
+bypassed. It has not been enabled in the running bridge.
 
 Requires Windows env vars: `HUB_SERVICE_KEY`, `SUPABASE_URL`.
 Optional: `OBSIDIAN_VAULT_PATH`.
