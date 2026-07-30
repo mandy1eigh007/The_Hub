@@ -7,6 +7,7 @@ Syncs local files to Supabase so the Hub web app can read them:
   NOW/TODO/STATE.md -> imp_files table
   active Claude/Codex feeds -> live_tail table
   Obsidian vault    -> obsidian_notes table (requires --with-obsidian)
+  AgentMemory Hub   -> obsidian_notes table (requires --with-agentmemory)
 
 Also syncs Hub-posted room_messages back to ROOM.jsonl so room.ps1 sees them.
 
@@ -17,12 +18,13 @@ Requires:
 
 Run:
   python bridge.py                    # continuous loop: room, wire, tail, imp only
-  python bridge.py --with-obsidian    # also sync Obsidian (requires OBSIDIAN_VAULT_PATH)
+  python bridge.py --with-obsidian    # also sync an explicitly selected Obsidian vault
+  python bridge.py --with-agentmemory # also sync only approved AgentMemory Hub notes
   python bridge.py --once             # single pass and exit
   python bridge.py --source room      # only sync room
 """
 
-import os, sys, json, time, hashlib, argparse, logging
+import os, sys, json, time, hashlib, argparse, logging, importlib.util
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -55,6 +57,9 @@ CLAUDE_PROJECTS = Path(r"C:\Users\mandy\.claude\projects")
 # agent conversation data may be personal and must never become an IMP file.
 CODEX_TAIL = Path(os.environ.get("CODEX_TAIL_PATH", r"C:\Users\mandy\.codex\hub-tail.jsonl"))
 OBSIDIAN_VAULT  = Path(os.environ.get("OBSIDIAN_VAULT_PATH", "")) if os.environ.get("OBSIDIAN_VAULT_PATH") else None
+AGENTMEMORY_ROOT = Path(os.environ.get("AGENTMEMORY_PATH", r"C:\AgentMemory"))
+AGENTMEMORY_HUB = AGENTMEMORY_ROOT / "Hub"
+AGENTMEMORY_INTAKE = AGENTMEMORY_ROOT / "tools" / "agentmemory_intake.py"
 
 # files that should never be synced to Obsidian notes table
 OBSIDIAN_EXCLUDE_STEMS = {".obsidian", "AIEG-Private", "AIEG-Tools", "sealed"}
@@ -84,6 +89,23 @@ def sb_post(table: str, rows: list, on_conflict: str | None = None) -> int:
     r = requests.post(url, json=rows, headers=h, params=params, timeout=15)
     if r.status_code not in (200, 201, 204, 409):
         log.warning("POST %s -> %d: %s", table, r.status_code, r.text[:200])
+        return 0
+    return len(rows)
+
+
+def sb_post_agentmemory(rows: list, on_conflict: str) -> int:
+    """Post AgentMemory only when Supabase confirms a successful upsert.
+
+    The legacy bridge accepts HTTP 409 as a success for its older sources. An
+    AgentMemory watermark must not move on an ambiguous conflict response.
+    """
+    if not rows:
+        return 0
+    url = f"{SUPABASE_URL}/rest/v1/obsidian_notes"
+    h = {**headers(), "Prefer": "resolution=merge-duplicates,return=minimal"}
+    r = requests.post(url, json=rows, headers=h, params={"on_conflict": on_conflict}, timeout=15)
+    if r.status_code not in (200, 201, 204):
+        log.warning("agentmemory POST -> %d", r.status_code)
         return 0
     return len(rows)
 
@@ -481,6 +503,120 @@ def sync_codex_tail(wm: dict):
 
 # ── Obsidian sync ─────────────────────────────────────────────────────────────
 
+def _is_under(path: Path, root: Path) -> bool:
+    """Return whether path is inside root without relying on string prefixes."""
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def _load_agentmemory_intake():
+    """Load the local intake validator so bridge uses the same privacy rules."""
+    if not AGENTMEMORY_INTAKE.exists():
+        raise RuntimeError(f"AgentMemory intake validator not found: {AGENTMEMORY_INTAKE}")
+    spec = importlib.util.spec_from_file_location("agentmemory_intake", AGENTMEMORY_INTAKE)
+    if not spec or not spec.loader:
+        raise RuntimeError("Unable to load AgentMemory intake validator")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _validate_agentmemory_hub_note(fields: dict, body: str, intake) -> list[str]:
+    """Revalidate a Hub-lane note with the exact local intake policy.
+
+    Intake validates pending candidates. Bridge receives their approved output,
+    so temporarily restore the pending status to reuse all required-field and
+    privacy checks, then enforce the additional approved-output fields.
+    """
+    pending_fields = dict(fields)
+    pending_fields["status"] = "pending"
+    errors = list(intake.validate(pending_fields, body))
+
+    if fields.get("status", "").lower() != "approved":
+        errors.append("approved_status")
+    if fields.get("lane", "").lower() != "hub":
+        errors.append("hub_lane")
+    if fields.get("hub_eligible", "").lower() != "true":
+        errors.append("hub_eligible")
+    if fields.get("classification", "").lower() != "non_sensitive":
+        errors.append("classification")
+    if fields.get("validator_version") != intake.POLICY["validator_version"]:
+        errors.append("validator_version")
+    try:
+        datetime.fromisoformat(fields.get("validated_at", "").replace("Z", "+00:00"))
+    except ValueError:
+        errors.append("validated_at")
+    return sorted(set(errors))
+
+
+def sync_agentmemory(wm: dict):
+    """Sync only locally approved, non-sensitive AgentMemory Hub notes.
+
+    This source is deliberately separate from generic Obsidian sync. It fails
+    closed when frontmatter, approval metadata, or privacy scanning fails.
+    """
+    if not AGENTMEMORY_HUB.exists():
+        log.info("agentmemory: Hub lane not found; nothing to sync")
+        return
+
+    try:
+        intake = _load_agentmemory_intake()
+    except RuntimeError as exc:
+        log.error("agentmemory: %s", exc)
+        return
+
+    rows: list[dict] = []
+    row_keys: list[str] = []
+    for md in sorted(AGENTMEMORY_HUB.glob("*.md")):
+        try:
+            size = md.stat().st_size
+        except OSError:
+            continue
+        if size > OBSIDIAN_MAX_SIZE:
+            log.warning("agentmemory: skip oversized note %s", md.name)
+            continue
+        try:
+            content = md.read_text(encoding="utf-8", errors="strict")
+            fields, body = intake.parse_frontmatter(content)
+        except (OSError, UnicodeDecodeError, ValueError):
+            log.warning("agentmemory: reject malformed note %s", md.name)
+            continue
+
+        errors = _validate_agentmemory_hub_note(fields, body, intake)
+        if errors:
+            log.warning("agentmemory: reject %s (%s)", md.name, ", ".join(errors))
+            continue
+
+        h = sha256(content)
+        rel_path = f"agentmemory/Hub/{md.name}"
+        cache_key = f"agentmemory:{rel_path}"
+        if wm.get(cache_key) == h:
+            continue
+
+        rows.append({
+            "path": rel_path,
+            "title": f"AgentMemory {fields['note_id']}",
+            "content": content[:50000],
+            "tags": _obsidian_tags(body),
+            "sha256": h,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        })
+        row_keys.append(cache_key)
+
+    pushed = 0
+    for i in range(0, len(rows), 50):
+        batch = rows[i:i + 50]
+        batch_keys = row_keys[i:i + 50]
+        if sb_post_agentmemory(batch, on_conflict="path") == len(batch):
+            for row, cache_key in zip(batch, batch_keys):
+                wm[cache_key] = row["sha256"]
+            pushed += len(batch)
+    if pushed:
+        log.info("agentmemory: synced %d approved Hub notes", pushed)
+
 def _obsidian_tags(content: str) -> list[str]:
     """Extract #tags from Obsidian markdown content."""
     import re
@@ -493,6 +629,10 @@ def sync_obsidian(wm: dict):
 
     rows = []
     for md in OBSIDIAN_VAULT.rglob("*.md"):
+        # AgentMemory has a stricter dedicated source. Never allow generic
+        # Obsidian sync to bypass its validated Hub-lane gate.
+        if _is_under(md, AGENTMEMORY_ROOT):
+            continue
         # Skip excluded dirs/stems
         if any(ex in md.parts for ex in OBSIDIAN_EXCLUDE_STEMS):
             continue
@@ -571,14 +711,21 @@ def run_pass(sources: set[str], wm: dict):
         except Exception as e:
             log.error("obsidian sync error: %s", e)
 
+    if "agentmemory" in sources:
+        try:
+            sync_agentmemory(wm)
+        except Exception as e:
+            log.error("agentmemory sync error: %s", e)
+
     save_watermarks(wm)
 
 
 def main():
     parser = argparse.ArgumentParser(description="Hub bridge daemon")
     parser.add_argument("--once", action="store_true", help="single pass and exit")
-    parser.add_argument("--source", default="all", help="room|wire|tail|imp|obsidian|all (default: room,wire,tail,imp)")
+    parser.add_argument("--source", default="all", help="room|wire|tail|imp|obsidian|agentmemory|all (default: room,wire,tail,imp)")
     parser.add_argument("--with-obsidian", action="store_true", help="also sync Obsidian vault (requires OBSIDIAN_VAULT_PATH env var)")
+    parser.add_argument("--with-agentmemory", action="store_true", help="also sync locally approved AgentMemory Hub notes")
     args = parser.parse_args()
 
     if not SERVICE_KEY:
@@ -586,12 +733,14 @@ def main():
         log.error('  [System.Environment]::SetEnvironmentVariable("HUB_SERVICE_KEY", "<value>", "User")')
         sys.exit(1)
 
-    VALID_SOURCES = {"room", "wire", "tail", "imp", "obsidian"}
+    VALID_SOURCES = {"room", "wire", "tail", "imp", "obsidian", "agentmemory"}
 
     if args.source == "all":
         sources = {"room", "wire", "tail", "imp"}
         if args.with_obsidian:
             sources.add("obsidian")
+        if args.with_agentmemory:
+            sources.add("agentmemory")
     else:
         sources = {s.strip() for s in args.source.split(",")}
         invalid = sources - VALID_SOURCES
@@ -601,9 +750,16 @@ def main():
         if "obsidian" in sources and not args.with_obsidian:
             log.error("--source obsidian requires --with-obsidian flag")
             sys.exit(1)
+        if "agentmemory" in sources and not args.with_agentmemory:
+            log.error("--source agentmemory requires --with-agentmemory flag")
+            sys.exit(1)
 
     if "obsidian" in sources and not os.environ.get("OBSIDIAN_VAULT_PATH"):
         log.error("Obsidian sync requires OBSIDIAN_VAULT_PATH env var to be set")
+        sys.exit(1)
+
+    if "obsidian" in sources and OBSIDIAN_VAULT and _is_under(AGENTMEMORY_ROOT, OBSIDIAN_VAULT):
+        log.error("Generic Obsidian sync cannot include AgentMemory; use --with-agentmemory instead")
         sys.exit(1)
 
     log.info("bridge starting. sources=%s once=%s", sources, args.once)
@@ -616,7 +772,7 @@ def main():
 
     # Continuous loop: fast sources every 10s, slow sources every 60s
     fast = {"room", "wire", "tail"}
-    slow = {"imp", "obsidian"}
+    slow = {"imp", "obsidian", "agentmemory"}
     tick = 0
 
     while True:
